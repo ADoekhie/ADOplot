@@ -610,13 +610,16 @@ class MyFrame:
             graph_labels.append('fit: a=%.1f, b=%.1f, c=%.1f, d=%.1f' % tuple(p_opt))
 
     def save_plot(self):
-        files = [('All Files', '*.*'),
+        try:
+            files = [('All Files', '*.*'),
                  ('Python Files', '*.py'),
                  ('Text Document', '*.txt'),
                  ('Image', '*.png'),
                  ('Image', '*.tif')]
-        self.frame.save_file = asksaveasfile(filetypes=files, defaultextension=files)
-        self.figure1.savefig(self.frame.save_file.name, dpi=300)
+            self.frame.save_file = asksaveasfile(filetypes=files, defaultextension=files)
+            self.figure1.savefig(self.frame.save_file.name, dpi=300)
+        except AttributeError:
+            pass
 
     @staticmethod
     def do_nothing():
