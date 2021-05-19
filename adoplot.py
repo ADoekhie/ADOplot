@@ -612,10 +612,10 @@ class MyFrame:
     def save_plot(self):
         try:
             files = [('All Files', '*.*'),
-                 ('Python Files', '*.py'),
-                 ('Text Document', '*.txt'),
-                 ('Image', '*.png'),
-                 ('Image', '*.tif')]
+                     ('Python Files', '*.py'),
+                     ('Text Document', '*.txt'),
+                     ('Image', '*.png'),
+                     ('Image', '*.tif')]
             self.frame.save_file = asksaveasfile(filetypes=files, defaultextension=files)
             self.figure1.savefig(self.frame.save_file.name, dpi=300)
         except AttributeError:
