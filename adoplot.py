@@ -9,6 +9,7 @@ from tkinter.filedialog import askopenfilename
 from tkinter.filedialog import asksaveasfile
 import tkinter.messagebox as tk_message_box
 from scipy.optimize import curve_fit
+from scipy.signal import find_peaks, peak_prominences
 
 file_info = {}
 graph_labels = []
@@ -212,7 +213,7 @@ class MyFrame:
         gtype3.grid(row=1, column=3, sticky="nsew", padx=5, pady=2.5)
         # check buttons for graph type
         graph_type = ['Line', 'Scatter', 'Bar', 'X_Log', 'Y_Log']
-        scale_type = ['linear', 'log', 'symlog', 'logit']
+        scale_type = ['linear', 'log', 'symlog', 'logit', 'reverse']
         a = 1
         for my_type in graph_type:
             _ = ttk.Checkbutton(gtype, text=my_type, onvalue=a, offvalue=0,
@@ -302,14 +303,6 @@ class MyFrame:
                 set_grid(b, 2)
                 b += 1
 
-        # _ = ttk.Combobox(self.frame.marker,
-        #                  state="readonly",
-        #                  values=my_markers,
-        #                  justify="left",
-        #                  textvariable=file_info[my_file]["marker"],
-        #                  width=10)
-        # set_grid(1, 1)
-
         _ = ttk.Button(self.frame.window, text="Set", command=lambda: self.frame.window.withdraw())
         set_grid(3, 1)
         _ = ttk.Button(self.frame.window, text="Close", command=lambda: self.frame.window.destroy())
@@ -329,6 +322,7 @@ class MyFrame:
         my_fits = {
             1: {"name": "Linear Regression", "var": "lin_reg"},
             2: {"name": "Four Parameter Logistic", "var": "fpl"},
+            3: {"name": "Find Peaks", "var": "f_peaks"}
         }
         a = 1
         for fits in my_fits:
@@ -496,8 +490,10 @@ class MyFrame:
                 graph_labels.append(data["legend"].get())
                 if p_mode == 1 or p_mode == 0:
                     self.ax1.plot(x, y, c=color, linestyle=l_style, marker=m_style)
-                    self.ax1.set_xscale(graph_settings["x_scale"].get())
-                    self.ax1.set_yscale(graph_settings["y_scale"].get())
+                    if graph_settings["x_scale"].get() != 'reverse':
+                        self.ax1.set_xscale(graph_settings["x_scale"].get())
+                    if graph_settings["y_scale"].get() != 'reverse':
+                        self.ax1.set_yscale(graph_settings["y_scale"].get())
                 if p_mode == 2:
                     self.ax1.scatter(x, y, c=color)
                 if p_mode == 3:
@@ -512,6 +508,8 @@ class MyFrame:
                     self.lin_plot(my_file)
                 if graph_settings["fit"].get() == "fpl":
                     self.fpl_plot(my_file)
+                if graph_settings["fit"].get() == "f_peaks":
+                    self.f_peaks(my_file)
             else:
                 pass
 
@@ -544,8 +542,16 @@ class MyFrame:
         x_lim_max = float(graph_settings["x_max_var"].get())
         y_lim_max = float(graph_settings["y_max_var"].get())
 
-        self.ax1.set_xlim(x_lim_min, x_lim_max)
-        self.ax1.set_ylim(y_lim_min, y_lim_max)
+        if graph_settings["y_scale"].get() != 'reverse':
+            self.ax1.set_ylim(y_lim_min, y_lim_max)
+        else:
+            self.ax1.set_ylim(y_lim_max, y_lim_min)
+
+        if graph_settings["x_scale"].get() != 'reverse':
+            self.ax1.set_xlim(x_lim_min, x_lim_max)
+        else:
+            self.ax1.set_xlim(x_lim_max, x_lim_min)
+
         self.ax1.legend(graph_labels, frameon=False, loc="best")
         self.ax1.set_xlabel(graph_settings["x_var"].get(), fontsize=12)
         self.ax1.set_ylabel(graph_settings["y_var"].get(), fontsize=12)
@@ -609,13 +615,24 @@ class MyFrame:
             self.ax1.plot(x_new, y_new, 'r--')
             graph_labels.append('fit: a=%.1f, b=%.1f, c=%.1f, d=%.1f' % tuple(p_opt))
 
+    def f_peaks(self, info):
+        y = file_info[info]["y_data"]
+        x = file_info[info]["x_data"]
+        y2 = 1/y
+        peaks, _ = find_peaks(y2, width=((max(x)-min(x))*.01))
+        self.ax1.plot(x[peaks], 1/y2[peaks], "x", color='y')
+        a = 0
+        for n in x[peaks]:
+            self.ax1.text(n, (1/y2[peaks][a])*0.99, s=str(int(n)))
+            a += 1
+
     def save_plot(self):
         try:
             files = [('All Files', '*.*'),
                      ('Python Files', '*.py'),
                      ('Text Document', '*.txt'),
-                     ('Image', '*.png'),
-                     ('Image', '*.tif')]
+                     ('Portable Image', '*.png'),
+                     ('Document Image', '*.tif')]
             self.frame.save_file = asksaveasfile(filetypes=files, defaultextension=files)
             self.figure1.savefig(self.frame.save_file.name, dpi=300)
         except AttributeError:
