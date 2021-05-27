@@ -5,11 +5,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from tkinter import *
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from tkinter.filedialog import askopenfilename
-from tkinter.filedialog import asksaveasfile
+from tkinter.filedialog import askopenfilenames, asksaveasfile
 import tkinter.messagebox as tk_message_box
 from scipy.optimize import curve_fit
-from scipy.signal import find_peaks, peak_prominences
+from scipy.signal import find_peaks
 
 file_info = {}
 graph_labels = []
@@ -51,7 +50,7 @@ class MyFrame:
 
     def my_tabs(self):
         # tab data buttons
-        self.frame.b1 = self.my_button(loc=self.tab_data_ls, text='Load File', cm=lambda: MyFile(), y=1)
+        self.frame.b1 = self.my_button(loc=self.tab_data_ls, text='Load File(s)', cm=lambda: Import(), y=1)
         self.frame.b1 = self.my_button(loc=self.tab_data_ls, text='New Dataset', cm=lambda: NewFile(), y=2)
 
         # tab graph buttons
@@ -648,11 +647,22 @@ class MyFrame:
                                 "This program was made by A. Doekhie. Use is purely intended for academic purposes.")
 
 
-class MyFile:
-
+class Import:
     def __init__(self):
+        self.filename = askopenfilenames()
+        if len(self.filename) > 1:
+            for file in self.filename:
+                MyFile(file)
+        elif len(self.filename) == 1:
+            MyFile(self.filename[0])
+        else:
+            return
+
+
+class MyFile:
+    def __init__(self, file):
+        self.filename = file
         try:
-            self.filename = askopenfilename()
             if not self.filename:
                 pass
             elif self.filename.find(".csv") == -1:
