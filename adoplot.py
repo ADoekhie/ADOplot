@@ -81,6 +81,10 @@ class MyFrame:
         self.frame.l3 = ttk.Label(self.tab_data_rs, text="Properties:")
         self.frame.l3.grid(row=1, column=3, padx=5, pady=5)
 
+    def del_all(self):
+        file_info.clear()
+        self.list_my_dataset()
+
     def list_my_dataset(self):
         if not file_info:
             return
@@ -150,12 +154,13 @@ class MyFrame:
 
         # File Menu
         self.frame.file_menu = Menu(self.frame.menu_bar, tearoff=0)
+        self.frame.file_menu.add_command(label="Delete all data", command=self.del_all)
         self.frame.file_menu.add_command(label="Exit", command=top.quit)
         self.frame.menu_bar.add_cascade(label="File", menu=self.frame.file_menu)
 
         # Help menu
         self.frame.help_menu = Menu(self.frame.menu_bar, tearoff=0)
-        self.frame.help_menu.add_command(label="Help Index", command=MyFrame.do_nothing)
+        self.frame.help_menu.add_command(label="Help", command=self.help)
         self.frame.help_menu.add_command(label="About...", command=MyFrame.my_about)
         self.frame.menu_bar.add_cascade(label="Help", menu=self.frame.help_menu)
         self.master.config(menu=self.frame.menu_bar)
@@ -645,6 +650,15 @@ class MyFrame:
     def my_about():
         tk_message_box.showinfo("About",
                                 "This program was made by A. Doekhie. Use is purely intended for academic purposes.")
+
+    @staticmethod
+    def help():
+        tk_message_box.showinfo("Help",
+                                "Load a or multiple .csv files containing purely one set of x and y data. "
+                                "In the data tab you can set their visual properties like color and linestyle. "
+                                "In the graph tab you can plot the data and optimise the plot format. "
+                                "Advanced fitting options are present for use but limited at this stage. "
+                                "Please request more functionality on the GitHub page.")
 
 
 class Import:
