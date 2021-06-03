@@ -57,7 +57,7 @@ class MyFrame:
         self.frame.b3 = self.my_button(loc=self.tab_graph_ls, text="Plot Graph", cm=lambda: self.plot(), y=1)
         self.frame.b4 = self.my_button(loc=self.tab_graph_ls, text="Set Type", cm=lambda: self.graph_type(), y=2)
         self.frame.b5 = self.my_button(loc=self.tab_graph_ls, text="Set X/Y", cm=lambda: self.x_y(), y=3)
-        self.frame.b6 = self.my_button(loc=self.tab_graph_rs1, text="Fit Options", cm=lambda: self.my_fit(), y=1)
+        self.frame.b6a = self.my_button(loc=self.tab_graph_rs1, text="Fit Options", cm=lambda: self.my_fit(), y=1)
         self.frame.b7 = self.my_button(loc=self.tab_graph_ls, text="Set Spines", cm=lambda: self.my_spines(), y=5)
         self.frame.b8 = self.my_button(loc=self.tab_graph_ls, text="Set Legend", cm=lambda: self.my_legend(), y=6)
         self.frame.b8 = self.my_button(loc=self.tab_graph_ls, text="Set Figure", cm=lambda: self.my_figure_size(), y=7)
@@ -191,13 +191,22 @@ class MyFrame:
         self.frame.text.insert(INSERT, 'X Data ')
         self.frame.text.insert(INSERT, "\t")
         self.frame.text.insert(INSERT, 'Y Data')
+        self.frame.text.insert(INSERT, "\t")
+        self.frame.text.insert(INSERT, 'Y Error')
         self.frame.text.insert(INSERT, "\n")
 
         for x in range(len(file_info[file]["x_data"])):
             self.frame.text.insert(INSERT, file_info[file]["x_data"][x])
             self.frame.text.insert(INSERT, "\t")
             self.frame.text.insert(INSERT, file_info[file]["y_data"][x])
+            self.frame.text.insert(INSERT, "\t")
+            try:
+                self.frame.text.insert(INSERT, file_info[file]["y_error"][x])
+                self.frame.text.insert(INSERT, "\t")
+            except IndexError:
+                pass
             self.frame.text.insert(INSERT, "\n")
+
         self.frame.text.grid(row=1, column=1)
 
     def graph_type(self):
@@ -250,7 +259,18 @@ class MyFrame:
         self.frame.line = ttk.LabelFrame(self.frame.window, text="Set Line")
         self.frame.line.grid(row=1, column=2, sticky=N, padx=5, pady=2.5)
         self.frame.marker = ttk.LabelFrame(self.frame.window, text="Set Marker")
-        self.frame.marker.grid(row=2, column=1, columnspan=2, sticky=N, padx=5, pady=2.5)
+        self.frame.marker.grid(row=2, column=1, sticky=N, padx=5, pady=2.5)
+        if len(file_info[my_file]["y_error"]) > 0:
+            self.frame.err = ttk.LabelFrame(self.frame.window, text="Show Error Bars")
+            self.frame.err.grid(row=2, column=2, sticky=N, padx=5, pady=2.5)
+            _ = ttk.Checkbutton(self.frame.err, onvalue=1, offvalue=1, variable=file_info[my_file]["error_bar"])
+            set_grid(1, 1)
+            _ = ttk.Label(self.frame.err, text="Cap Size")
+            set_grid(1, 2)
+            _ = ttk.Entry(self.frame.err, textvariable=file_info[my_file]["cap_size"], width=2)
+            set_grid(1, 3)
+        else:
+            pass
 
         # set colors in labelframe
         my_line_colors = ['Blue', 'Green', 'Red', 'Cyan', 'Magenta', 'Yellow', 'White']
@@ -274,39 +294,30 @@ class MyFrame:
                          width=10)
         set_grid(1, 1)
 
-        my_markers = {
-            "point": ".",
-            "pixel": ",",
-            "circle": "o",
-            "triangle_down": "v",
-            "triangle_up": "^",
-            "tri_down": "1",
-            "tri_up": "2",
-            "octagon": "8",
-            "square": "s",
-            "pentagon": "p",
-            "star": "*",
-            "hexagon1": "h",
-            "hexagon2": "H",
-            "plus": "+",
-            "x": "x",
-            "diamond": "D",
-        }
+        my_marker_list = ["point",
+                          "pixel", "circle",
+                          "triangle_down",
+                          "triangle_up",
+                          "tri_down",
+                          "tri_up",
+                          "octagon",
+                          "square",
+                          "pentagon",
+                          "star",
+                          "hexagon1",
+                          "hexagon2",
+                          "plus",
+                          "x",
+                          "diamond"
+                          ]
 
-        a = 1
-        b = 1
-        for marker in my_markers:
-            if a <= len(my_markers) / 2:
-                _ = ttk.Checkbutton(self.frame.marker, text=marker, onvalue=my_markers[marker], offvalue="",
-                                    variable=file_info[my_file]["marker"])
-                set_grid(a, 1)
-                a += 1
-            elif a > len(my_markers) / 2:
-                _ = ttk.Checkbutton(self.frame.marker, text=marker, onvalue=my_markers[marker], offvalue="",
-                                    variable=file_info[my_file]["marker"])
-                set_grid(b, 2)
-                b += 1
-
+        _ = ttk.Combobox(self.frame.marker,
+                         state="readonly",
+                         values=my_marker_list,
+                         justify="left",
+                         textvariable=file_info[my_file]["marker"],
+                         width=10)
+        set_grid(1, 1)
         _ = ttk.Button(self.frame.window, text="Set", command=lambda: self.frame.window.withdraw())
         set_grid(3, 1)
         _ = ttk.Button(self.frame.window, text="Close", command=lambda: self.frame.window.destroy())
@@ -335,6 +346,20 @@ class MyFrame:
             set_grid(a, 1)
             a += 1
 
+        _ = tk.Label(self.frame.window, text="Fit Color")
+        set_grid(a, 1, s=tk.W)
+        a += 1
+        # fit line colors
+        my_line_colors = ['Blue', 'Green', 'Red', 'Cyan', 'Magenta', 'Yellow', 'White']
+
+        _ = ttk.Combobox(self.frame.window,
+                         state="readonly",
+                         values=my_line_colors,
+                         justify="left",
+                         textvariable=graph_settings["fit_color"],
+                         width=10)
+        set_grid(a, 1)
+        a += 1
         _ = ttk.Button(self.frame.window, text="Set", command=lambda: self.frame.window.destroy())
         set_grid(a, 1)
 
@@ -412,10 +437,18 @@ class MyFrame:
         }
 
         a = 1
+
+        my_line_colors = ['Blue', 'Green', 'Red', 'Cyan', 'Magenta', 'Yellow', 'White']
+
         for spines in my_spines_dict:
             _ = ttk.Label(my_spin, text=my_spines_dict[spines]["label1"])
             set_grid(a, 1)
-            _ = ttk.Entry(my_spin, textvariable=my_spines_dict[spines]["var1"], width=7)
+            _ = ttk.Combobox(my_spin,
+                             state="readonly",
+                             values=my_line_colors,
+                             justify="left",
+                             textvariable=my_spines_dict[spines]["var1"],
+                             width=7)
             set_grid(a, 2)
             _ = ttk.Label(my_spin, text=my_spines_dict[spines]["label2"])
             set_grid(a, 3)
@@ -488,7 +521,8 @@ class MyFrame:
             y = data["y_data"]
             color = data["color"].get()
             l_style = data["line_style"].get()
-            m_style = data["marker"].get()
+            pre_m_style = data["marker"].get()
+            m_style = my_markers[pre_m_style]
             p_mode = graph_settings["plot_mode"].get()
             if data["active"].get() == 'yes':
                 graph_labels.append(data["legend"].get())
@@ -514,6 +548,10 @@ class MyFrame:
                     self.fpl_plot(my_file)
                 if graph_settings["fit"].get() == "f_peaks":
                     self.f_peaks(my_file)
+                if data["error_bar"].get() == 1:
+                    y_error = data["y_error"]
+                    self.ax1.errorbar(x, y, yerr=y_error, c=color, linestyle="none",
+                                      capsize=data["cap_size"].get(), marker=m_style)
             else:
                 pass
 
@@ -525,10 +563,10 @@ class MyFrame:
 
         if not graph_settings["y_axis_spine_color"].get():
             graph_settings["y_axis_spine_line_width"].set(1.25)
-            graph_settings["y_axis_spine_color"].set('k')
+            graph_settings["y_axis_spine_color"].set('black')
 
             graph_settings["x_axis_spine_line_width"].set(1.25)
-            graph_settings["x_axis_spine_color"].set('k')
+            graph_settings["x_axis_spine_color"].set('black')
 
         self.ax1.spines['left'].set_linewidth(float(graph_settings["y_axis_spine_line_width"].get()))
         self.ax1.spines['left'].set_color(graph_settings["y_axis_spine_color"].get())
@@ -567,7 +605,7 @@ class MyFrame:
         data_x = file_info[info]["x_data"]
         data_y = file_info[info]["y_data"]
         p_opt, p_cov = curve_fit(func, data_x, data_y)
-        self.ax1.plot(data_x, func(data_x, *p_opt), 'r--',
+        self.ax1.plot(data_x, func(data_x, *p_opt), color=graph_settings["fit_color"].get(), linestyle='--',
                       label='fit: a=%5.3f, b=%5.3f' % tuple(p_opt))
         self.ax1.legend()
 
@@ -606,7 +644,7 @@ class MyFrame:
             for x in x_new:
                 y_new.append(func(x, *par))
 
-            self.ax1.plot(x_new, y_new, 'r--')
+            self.ax1.plot(x_new, y_new, color=graph_settings["fit_color"].get(), linestyle='--')
             graph_labels.append('fit: a=%.1f, b=%.1f, c=%.1f, d=%.1f' % tuple(par))
 
             file_info[info]["x_new"] = x_new
@@ -616,18 +654,18 @@ class MyFrame:
             x_new = file_info[info]["x_new"]
             y_new = file_info[info]["y_new"]
 
-            self.ax1.plot(x_new, y_new, 'r--')
+            self.ax1.plot(x_new, y_new, color=graph_settings["fit_color"].get(), linestyle='--')
             graph_labels.append('fit: a=%.1f, b=%.1f, c=%.1f, d=%.1f' % tuple(p_opt))
 
     def f_peaks(self, info):
         y = file_info[info]["y_data"]
         x = file_info[info]["x_data"]
-        y2 = 1/y
-        peaks, _ = find_peaks(y2, width=((max(x)-min(x))*.01))
-        self.ax1.plot(x[peaks], 1/y2[peaks], "x", color='y')
+        y2 = 1 / y
+        peaks, _ = find_peaks(y2, width=((max(x) - min(x)) * .01))
+        self.ax1.plot(x[peaks], 1 / y2[peaks], "x", color=graph_settings["fit_color"].get())
         a = 0
         for n in x[peaks]:
-            self.ax1.text(n, (1/y2[peaks][a])*0.99, s=str(int(n)))
+            self.ax1.text(n, (1 / y2[peaks][a]) * 0.99, s=str(int(n)))
             a += 1
 
     def save_plot(self):
@@ -690,6 +728,11 @@ class MyFile:
                 self.spectra = self.data.values
                 self.x = self.spectra[:, 0]
                 self.y = self.spectra[:, 1]
+                try:
+                    self.err = self.spectra[:, 2]
+                except IndexError:
+                    self.err = []
+                    pass
                 self.identifier = self.filename.split('/')
                 self.length = len(self.identifier)
                 self.name = self.identifier[self.length - 1]
@@ -708,13 +751,17 @@ class MyFile:
                     "active": tk.StringVar(),
                     "line_style": tk.StringVar(),
                     "marker": tk.StringVar(),
+                    "y_error": self.err,
+                    "error_bar_color": tk.StringVar(),
+                    "error_bar": tk.IntVar(),
+                    "cap_size": tk.IntVar(),
                 }
                 default_var = {
                     "color": "black",
                     "legend": "data",
                     "active": "yes",
                     "line_style": "solid",
-                    "marker": "",
+                    "marker": "none",
                 }
 
                 for var1 in default_var:
@@ -731,6 +778,7 @@ class NewFile:
         self.x_str = tk.StringVar()
         self.y_str = tk.StringVar()
         self.name = tk.StringVar()
+        self.err = tk.StringVar()
         self.frame = tk.Toplevel(top)
         self.frame.geometry("+%d+%d" % (x_margin_pop, y_margin_pop))
         self.frame.title("New DataSet")
@@ -745,8 +793,10 @@ class NewFile:
         _.grid(row=2, column=1, stick="nsew", padx=5, pady=2.5)
         _ = ttk.Label(self.frame.frame, text="Y")
         _.grid(row=3, column=1, stick="nsew", padx=5, pady=2.5)
-        _ = ttk.Button(self.frame.frame, text="Set", command=lambda: self.do_store())
+        _ = ttk.Label(self.frame.frame, text="Error")
         _.grid(row=4, column=1, stick="nsew", padx=5, pady=2.5)
+        _ = ttk.Button(self.frame.frame, text="Set", command=lambda: self.do_store())
+        _.grid(row=5, column=1, stick="nsew", padx=5, pady=2.5)
 
         _ = ttk.Entry(self.frame.frame, textvariable=self.name)
         _.grid(row=1, column=2, stick="nsew", padx=5, pady=2.5)
@@ -754,6 +804,8 @@ class NewFile:
         _.grid(row=2, column=2, stick="nsew", padx=5, pady=2.5)
         _ = ttk.Entry(self.frame.frame, textvariable=self.y_str, width=10)
         _.grid(row=3, column=2, stick="nsew", padx=5, pady=2.5)
+        _ = ttk.Entry(self.frame.frame, textvariable=self.err, width=10)
+        _.grid(row=4, column=2, stick="nsew", padx=5, pady=2.5)
 
     def do_store(self):
         if not self.name:
@@ -765,6 +817,13 @@ class NewFile:
             x = [float(ele) for ele in x_f]
             y_f = y_split.split(",")
             y = [float(ele) for ele in y_f]
+            try:
+                err_split = str(self.err.get())
+                err_f = err_split.split(",")
+                err = [float(ele) for ele in err_f]
+            except ValueError:
+                err = []
+
             # set variables
             file_info[str(self.name.get())] = {
                 "color": tk.StringVar(),
@@ -779,13 +838,17 @@ class NewFile:
                 "active": tk.StringVar(),
                 "line_style": tk.StringVar(),
                 "marker": tk.StringVar(),
+                "y_error": err,
+                "error_bar_color": tk.StringVar(),
+                "error_bar": tk.IntVar(),
+                "cap_size": tk.IntVar(),
             }
             default_var = {
                 "color": "black",
                 "legend": "data",
                 "active": "yes",
                 "line_style": "solid",
-                "marker": "",
+                "marker": "none",
             }
 
             for var1 in default_var:
@@ -826,6 +889,7 @@ graph_settings = {
     "figure_width": tk.IntVar(),
     "x_scale": tk.StringVar(),
     "y_scale": tk.StringVar(),
+    "fit_color": tk.StringVar(),
 }
 
 default_graph_var = {
@@ -837,6 +901,26 @@ default_graph_var = {
     "x_scale": "linear",
     "y_scale": "linear",
 }
+
+my_markers = {
+            "none": " ",
+            "point": ".",
+            "pixel": ",",
+            "circle": "o",
+            "triangle_down": "v",
+            "triangle_up": "^",
+            "tri_down": "1",
+            "tri_up": "2",
+            "octagon": "8",
+            "square": "s",
+            "pentagon": "p",
+            "star": "*",
+            "hexagon1": "h",
+            "hexagon2": "H",
+            "plus": "+",
+            "x": "x",
+            "diamond": "D",
+        }
 
 for var in default_graph_var:
     graph_settings[var].set(default_graph_var[var])
