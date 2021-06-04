@@ -14,11 +14,84 @@ file_info = {}
 graph_labels = []
 
 
-class MyFrame:
+class MyFrame(tk.Tk):
 
-    def __init__(self, master):
-        self.master = master
-        self.frame = tk.Frame(master)
+    def __init__(self):
+        super().__init__()
+
+        self.w = 800
+        self.h = 650
+        self.screen_width = self.winfo_screenwidth()
+        self.screen_height = self.winfo_screenheight()
+        self.x_margin = (self.screen_width - self.w) / 2
+        self.y_margin = (self.screen_height - self.h) / 2
+        self.x_margin_pop = (self.screen_width - self.w) / 1.5
+        self.y_margin_pop = (self.screen_height - self.h) / 1.5
+
+        self.graph_settings = {
+            "x_var": tk.StringVar(),
+            "y_var": tk.StringVar(),
+            "line_color": tk.StringVar(),
+            "x_min_var": tk.StringVar(),
+            "x_max_var": tk.StringVar(),
+            "fit": tk.StringVar(),
+            "y_min_var": tk.StringVar(),
+            "y_max_var": tk.StringVar(),
+            "plot_mode": tk.IntVar(),
+            "plot_color": tk.StringVar(),
+            "scale_mode": tk.StringVar(),
+            "x_axis_spine_color": tk.StringVar(),
+            "y_axis_spine_color": tk.StringVar(),
+            "x_axis_spine_line_width": tk.StringVar(),
+            "y_axis_spine_line_width": tk.StringVar(),
+            "legend_pos": tk.StringVar(),
+            "legend_box": tk.IntVar(),
+            "figure_height": tk.IntVar(),
+            "figure_width": tk.IntVar(),
+            "x_scale": tk.StringVar(),
+            "y_scale": tk.StringVar(),
+            "fit_color": tk.StringVar(),
+        }
+
+        self.default_graph_var = {
+            "x_var": 'test',
+            "y_var": 'test',
+            "legend_box": 0,
+            "figure_height": 6,
+            "figure_width": 8,
+            "x_scale": "linear",
+            "y_scale": "linear",
+        }
+
+        self.my_markers = {
+            "none": " ",
+            "point": ".",
+            "pixel": ",",
+            "circle": "o",
+            "triangle_down": "v",
+            "triangle_up": "^",
+            "tri_down": "1",
+            "tri_up": "2",
+            "octagon": "8",
+            "square": "s",
+            "pentagon": "p",
+            "star": "*",
+            "hexagon1": "h",
+            "hexagon2": "H",
+            "plus": "+",
+            "x": "x",
+            "diamond": "D",
+        }
+
+        for var in self.default_graph_var:
+            self.graph_settings[var].set(self.default_graph_var[var])
+
+        self.title('ADO plot')
+        # You can set the geometry attribute to change the root ado_plots size
+        self.geometry("+%d+%d" % (self.x_margin, self.y_margin))  # You want the size of the app to be 500x500
+        self.resizable(0, 0)  # Don't allow resizing in the x or y direction
+
+        self.frame = tk.Frame(self)
         self.menu()
         self.frame.figure1 = None
         self.frame.over_view = tk.Frame(self.frame).grid()
@@ -28,7 +101,7 @@ class MyFrame:
         self.tab_main.add(self.tab_data, text='Data')
         self.tab_main.add(self.tab_graph, text='Graph')
         self.tab_main.grid()
-        self.graph = graph_settings
+        self.graph = self.graph_settings
 
         # tab data labelframe and grid
         self.tab_data_ls = ttk.LabelFrame(self.tab_data, text='Options')
@@ -83,6 +156,8 @@ class MyFrame:
 
     def del_all(self):
         file_info.clear()
+        for widgets in self.tab_data_rs.winfo_children():
+            widgets.destroy()
         self.list_my_dataset()
 
     def list_my_dataset(self):
@@ -110,6 +185,7 @@ class MyFrame:
             for my_file1 in file_info:
                 place_buttons(my_file1, ab)
                 ab += 1
+        self.after(50)
 
     def relist_my_dataset(self, file):
         file_info.pop(file)
@@ -117,8 +193,7 @@ class MyFrame:
             widgets.destroy()
         self.list_my_dataset()
 
-    @staticmethod
-    def x_auto():
+    def x_auto(self):
         if not file_info:
             tk_message_box.showerror("Error", "Please load a data file")
             pass
@@ -128,10 +203,10 @@ class MyFrame:
             x_max, x_min, y_max, y_min = data["x_max"], data["x_min"], data["y_max"], data["y_min"]
 
             minmax_list = {
-                1: {"name": x_max, "var": graph_settings["x_max_var"], "factor1": 1.05, "factor2": 0.95},
-                2: {"name": y_max, "var": graph_settings["y_max_var"], "factor1": 1.05, "factor2": 0.95},
-                3: {"name": x_min, "var": graph_settings["x_min_var"], "factor1": 0.95, "factor2": 1.05},
-                4: {"name": y_min, "var": graph_settings["y_min_var"], "factor1": 0.95, "factor2": 1.05},
+                1: {"name": x_max, "var": self.graph_settings["x_max_var"], "factor1": 1.05, "factor2": 0.95},
+                2: {"name": y_max, "var": self.graph_settings["y_max_var"], "factor1": 1.05, "factor2": 0.95},
+                3: {"name": x_min, "var": self.graph_settings["x_min_var"], "factor1": 0.95, "factor2": 1.05},
+                4: {"name": y_min, "var": self.graph_settings["y_min_var"], "factor1": 0.95, "factor2": 1.05},
             }
 
             for m_max in minmax_list:
@@ -150,26 +225,26 @@ class MyFrame:
 
     def menu(self):
         # Declare Menu
-        self.frame.menu_bar = Menu(self.master)
+        self.frame.menu_bar = Menu(self.frame)
 
         # File Menu
         self.frame.file_menu = Menu(self.frame.menu_bar, tearoff=0)
         self.frame.file_menu.add_command(label="Delete all data", command=self.del_all)
-        self.frame.file_menu.add_command(label="Exit", command=top.quit)
+        self.frame.file_menu.add_command(label="Exit", command=self.quit)
         self.frame.menu_bar.add_cascade(label="File", menu=self.frame.file_menu)
 
         # Help menu
         self.frame.help_menu = Menu(self.frame.menu_bar, tearoff=0)
         self.frame.help_menu.add_command(label="Help", command=self.help)
-        self.frame.help_menu.add_command(label="About...", command=MyFrame.my_about)
+        self.frame.help_menu.add_command(label="About...", command=self.my_about)
         self.frame.menu_bar.add_cascade(label="Help", menu=self.frame.help_menu)
-        self.master.config(menu=self.frame.menu_bar)
+        self.config(menu=self.frame.menu_bar)
         self.frame.grid()
 
-    def call_top(self, title):
+    def call_ado_plot(self, title):
         # open new window
-        self.frame.window = tk.Toplevel(top)
-        self.frame.window.geometry("+%d+%d" % (x_margin_pop, y_margin_pop))
+        self.frame.window = tk.Toplevel(ado_plot)
+        self.frame.window.geometry("+%d+%d" % (self.x_margin_pop, self.y_margin_pop))
         self.frame.window.title(title)
         self.frame.window.resizable(0, 0)
 
@@ -179,7 +254,7 @@ class MyFrame:
 
     def show_data(self, file):
         # open window
-        self.frame.window, self.frame.frame = self.call_top("Stored Data")
+        self.frame.window, self.frame.frame = self.call_ado_plot("Stored Data")
 
         # add scrollbar
         scrollbar = Scrollbar(self.frame.window)
@@ -211,7 +286,7 @@ class MyFrame:
 
     def graph_type(self):
         # open window
-        self.frame.window, self.frame.frame = self.call_top("Set graph type")
+        self.frame.window, self.frame.frame = self.call_ado_plot("Set graph type")
 
         def set_grid(gr, gc):
             _.grid(sticky="nsew", row=gr, column=gc, padx=5, pady=2.5)
@@ -230,17 +305,17 @@ class MyFrame:
         a = 1
         for my_type in graph_type:
             _ = ttk.Checkbutton(gtype, text=my_type, onvalue=a, offvalue=0,
-                                variable=graph_settings["plot_mode"])
+                                variable=self.graph_settings["plot_mode"])
             set_grid(a, 1)
             a += 1
 
         b = 1
         for a_type in scale_type:
             _ = ttk.Checkbutton(gtype2, text=a_type, onvalue=a_type, offvalue="linear",
-                                variable=graph_settings["x_scale"])
+                                variable=self.graph_settings["x_scale"])
             set_grid(b, 1)
             _ = ttk.Checkbutton(gtype3, text=a_type, onvalue=a_type, offvalue="linear",
-                                variable=graph_settings["y_scale"])
+                                variable=self.graph_settings["y_scale"])
             set_grid(b, 1)
             b += 1
 
@@ -249,7 +324,7 @@ class MyFrame:
 
     def my_properties(self, my_file):
         # open window
-        self.frame.window, self.frame.frame = self.call_top("Set Properties")
+        self.frame.window, self.frame.frame = self.call_ado_plot("Set Properties")
 
         def set_grid(gr, gc, s="nsew"):
             _.grid(sticky=s, row=gr, column=gc, padx=5, pady=2.5)
@@ -325,7 +400,7 @@ class MyFrame:
 
     def my_fit(self):
         # open window
-        self.frame.window, self.frame.frame = self.call_top("Choose fit")
+        self.frame.window, self.frame.frame = self.call_ado_plot("Choose fit")
 
         def set_grid(gr, gc, s="nsew"):
             _.grid(sticky=s, row=gr, column=gc, padx=5, pady=2.5)
@@ -342,7 +417,7 @@ class MyFrame:
         a = 1
         for fits in my_fits:
             _ = ttk.Checkbutton(my_fit_window, text=my_fits[fits]["name"], onvalue=my_fits[fits]["var"], offvalue="",
-                                variable=graph_settings["fit"])
+                                variable=self.graph_settings["fit"])
             set_grid(a, 1)
             a += 1
 
@@ -356,7 +431,7 @@ class MyFrame:
                          state="readonly",
                          values=my_line_colors,
                          justify="left",
-                         textvariable=graph_settings["fit_color"],
+                         textvariable=self.graph_settings["fit_color"],
                          width=10)
         set_grid(a, 1)
         a += 1
@@ -365,7 +440,7 @@ class MyFrame:
 
     def my_legend(self):
         # open window
-        self.frame.window, self.frame.frame = self.call_top("Add data labels")
+        self.frame.window, self.frame.frame = self.call_ado_plot("Add data labels")
 
         def set_grid(gr, gc, s="nsew"):
             _.grid(sticky=s, row=gr, column=gc, padx=5, pady=5, ipadx=5, ipady=5)
@@ -385,14 +460,14 @@ class MyFrame:
         # _ = ttk.Button(self.frame.window, text="Set", command=lambda: set_vars())
         # set_grid(a, 1)
         _ = ttk.Checkbutton(my_leg, text="Box On", onvalue=1, offvalue=0,
-                            variable=graph_settings["legend_box"])
+                            variable=self.graph_settings["legend_box"])
         set_grid(a, 1)
         _ = ttk.Button(self.frame.window, text="Set", command=lambda: self.frame.window.destroy())
         set_grid(a, 1)
 
     def my_figure_size(self):
         # open window
-        self.frame.window, self.frame.frame = self.call_top("Set Figure Size")
+        self.frame.window, self.frame.frame = self.call_ado_plot("Set Figure Size")
 
         def set_grid(gr, gc, s="nsew"):
             _.grid(sticky=s, row=gr, column=gc, padx=5, pady=5, ipadx=5, ipady=5)
@@ -400,7 +475,7 @@ class MyFrame:
         my_leg = ttk.LabelFrame(self.frame.window, text="Figure Size")
         my_leg.grid(row=1, column=1, sticky="nsew", padx=5, pady=5)
 
-        info = graph_settings
+        info = self.graph_settings
 
         _ = ttk.Label(my_leg, text="Height (inches):")
         set_grid(1, 1)
@@ -420,7 +495,7 @@ class MyFrame:
 
     def my_spines(self):
         # open window
-        self.frame.window, self.frame.frame = self.call_top("Set Spines")
+        self.frame.window, self.frame.frame = self.call_ado_plot("Set Spines")
 
         def set_grid(gr, gc, s="nsew"):
             _.grid(sticky=s, row=gr, column=gc, padx=5, pady=2.5)
@@ -430,10 +505,10 @@ class MyFrame:
 
         # set new frame in window
         my_spines_dict = {
-            1: {"label1": "X Axis Color:", "var1": graph_settings["x_axis_spine_color"],
-                "label2": "Y Axis Line Width:", "var2": graph_settings["x_axis_spine_line_width"]},
-            2: {"label1": "Y Axis Color:", "var1": graph_settings["y_axis_spine_color"],
-                "label2": "Y Axis Line Width:", "var2": graph_settings["y_axis_spine_line_width"]}
+            1: {"label1": "X Axis Color:", "var1": self.graph_settings["x_axis_spine_color"],
+                "label2": "Y Axis Line Width:", "var2": self.graph_settings["x_axis_spine_line_width"]},
+            2: {"label1": "Y Axis Color:", "var1": self.graph_settings["y_axis_spine_color"],
+                "label2": "Y Axis Line Width:", "var2": self.graph_settings["y_axis_spine_line_width"]}
         }
 
         a = 1
@@ -461,16 +536,20 @@ class MyFrame:
 
     def x_y(self):
         # open window
-        self.frame.window, self.frame.frame = self.call_top("Set X/Y limits")
+        self.frame.window, self.frame.frame = self.call_ado_plot("Set X/Y limits")
 
         def set_grid(gr, gc):
             _.grid(sticky="nsew", row=gr, column=gc, padx=5, pady=2.5)
 
         my_x_y = {
-            'x_min': {'name': 'x_min', 'var': graph_settings["x_min_var"], 'row': 1, "label_col": 1, "entry_col": 2},
-            'x_max': {'name': 'x_max', 'var': graph_settings["x_max_var"], 'row': 2, "label_col": 1, "entry_col": 2},
-            'y_min': {'name': 'y_min', 'var': graph_settings["y_min_var"], 'row': 3, "label_col": 1, "entry_col": 2},
-            'y_max': {'name': 'y_max', 'var': graph_settings["y_max_var"], 'row': 4, "label_col": 1, "entry_col": 2},
+            'x_min': {'name': 'x_min', 'var': self.graph_settings["x_min_var"],
+                      'row': 1, "label_col": 1, "entry_col": 2},
+            'x_max': {'name': 'x_max', 'var': self.graph_settings["x_max_var"],
+                      'row': 2, "label_col": 1, "entry_col": 2},
+            'y_min': {'name': 'y_min', 'var': self.graph_settings["y_min_var"],
+                      'row': 3, "label_col": 1, "entry_col": 2},
+            'y_max': {'name': 'y_max', 'var': self.graph_settings["y_max_var"],
+                      'row': 4, "label_col": 1, "entry_col": 2},
         }
 
         x_y_type = ttk.LabelFrame(self.frame.window, text="Set Limits")
@@ -495,7 +574,7 @@ class MyFrame:
 
         graph_labels.clear()
         # open window
-        self.frame.window, self.frame.frame = self.call_top("Plot")
+        self.frame.window, self.frame.frame = self.call_ado_plot("Plot")
         self.frame.grid()
 
         # Declare Menu
@@ -508,8 +587,8 @@ class MyFrame:
         self.frame.window.config(menu=self.frame.menu_bar)
 
         # create canvas
-        self.figure1 = plt.Figure(figsize=(graph_settings["figure_width"].get(),
-                                           graph_settings["figure_height"].get()),
+        self.figure1 = plt.Figure(figsize=(self.graph_settings["figure_width"].get(),
+                                           self.graph_settings["figure_height"].get()),
                                   dpi=96, constrained_layout=False, frameon=True)
         self.ax1 = self.figure1.add_subplot(1, 1, 1, clip_on="off")
         self.bar1 = FigureCanvasTkAgg(self.figure1, self.frame.window)
@@ -522,16 +601,16 @@ class MyFrame:
             color = data["color"].get()
             l_style = data["line_style"].get()
             pre_m_style = data["marker"].get()
-            m_style = my_markers[pre_m_style]
-            p_mode = graph_settings["plot_mode"].get()
+            m_style = self.my_markers[pre_m_style]
+            p_mode = self.graph_settings["plot_mode"].get()
             if data["active"].get() == 'yes':
                 graph_labels.append(data["legend"].get())
                 if p_mode == 1 or p_mode == 0:
                     self.ax1.plot(x, y, c=color, linestyle=l_style, marker=m_style)
-                    if graph_settings["x_scale"].get() != 'reverse':
-                        self.ax1.set_xscale(graph_settings["x_scale"].get())
-                    if graph_settings["y_scale"].get() != 'reverse':
-                        self.ax1.set_yscale(graph_settings["y_scale"].get())
+                    if self.graph_settings["x_scale"].get() != 'reverse':
+                        self.ax1.set_xscale(self.graph_settings["x_scale"].get())
+                    if self.graph_settings["y_scale"].get() != 'reverse':
+                        self.ax1.set_yscale(self.graph_settings["y_scale"].get())
                 if p_mode == 2:
                     self.ax1.scatter(x, y, c=color)
                 if p_mode == 3:
@@ -540,13 +619,13 @@ class MyFrame:
                     self.ax1.semilogx(x, y, c=color, linestyle=l_style)
                 if p_mode == 5:
                     self.ax1.semilogy(x, y, c=color, linestyle=l_style)
-                if not graph_settings["fit"].get():
+                if not self.graph_settings["fit"].get():
                     pass
-                if graph_settings["fit"].get() == "lin_reg":
+                if self.graph_settings["fit"].get() == "lin_reg":
                     self.lin_plot(my_file)
-                if graph_settings["fit"].get() == "fpl":
+                if self.graph_settings["fit"].get() == "fpl":
                     self.fpl_plot(my_file)
-                if graph_settings["fit"].get() == "f_peaks":
+                if self.graph_settings["fit"].get() == "f_peaks":
                     self.f_peaks(my_file)
                 if data["error_bar"].get() == 1:
                     y_error = data["y_error"]
@@ -561,42 +640,42 @@ class MyFrame:
         self.ax1.spines['top'].set_visible(False)
         self.ax1.spines['right'].set_visible(False)
 
-        if not graph_settings["y_axis_spine_color"].get():
-            graph_settings["y_axis_spine_line_width"].set(1.25)
-            graph_settings["y_axis_spine_color"].set('black')
+        if not self.graph_settings["y_axis_spine_color"].get():
+            self.graph_settings["y_axis_spine_line_width"].set(1.25)
+            self.graph_settings["y_axis_spine_color"].set('black')
 
-            graph_settings["x_axis_spine_line_width"].set(1.25)
-            graph_settings["x_axis_spine_color"].set('black')
+            self.graph_settings["x_axis_spine_line_width"].set(1.25)
+            self.graph_settings["x_axis_spine_color"].set('black')
 
-        self.ax1.spines['left'].set_linewidth(float(graph_settings["y_axis_spine_line_width"].get()))
-        self.ax1.spines['left'].set_color(graph_settings["y_axis_spine_color"].get())
+        self.ax1.spines['left'].set_linewidth(float(self.graph_settings["y_axis_spine_line_width"].get()))
+        self.ax1.spines['left'].set_color(self.graph_settings["y_axis_spine_color"].get())
 
-        self.ax1.spines['bottom'].set_linewidth(float(graph_settings["x_axis_spine_line_width"].get()))
-        self.ax1.spines['bottom'].set_color(graph_settings["x_axis_spine_color"].get())
+        self.ax1.spines['bottom'].set_linewidth(float(self.graph_settings["x_axis_spine_line_width"].get()))
+        self.ax1.spines['bottom'].set_color(self.graph_settings["x_axis_spine_color"].get())
 
-        if not graph_settings["x_min_var"].get():
+        if not self.graph_settings["x_min_var"].get():
             self.x_auto()
         else:
             pass
 
-        x_lim_min = float(graph_settings["x_min_var"].get())
-        y_lim_min = float(graph_settings["y_min_var"].get())
-        x_lim_max = float(graph_settings["x_max_var"].get())
-        y_lim_max = float(graph_settings["y_max_var"].get())
+        x_lim_min = float(self.graph_settings["x_min_var"].get())
+        y_lim_min = float(self.graph_settings["y_min_var"].get())
+        x_lim_max = float(self.graph_settings["x_max_var"].get())
+        y_lim_max = float(self.graph_settings["y_max_var"].get())
 
-        if graph_settings["y_scale"].get() != 'reverse':
+        if self.graph_settings["y_scale"].get() != 'reverse':
             self.ax1.set_ylim(y_lim_min, y_lim_max)
         else:
             self.ax1.set_ylim(y_lim_max, y_lim_min)
 
-        if graph_settings["x_scale"].get() != 'reverse':
+        if self.graph_settings["x_scale"].get() != 'reverse':
             self.ax1.set_xlim(x_lim_min, x_lim_max)
         else:
             self.ax1.set_xlim(x_lim_max, x_lim_min)
 
         self.ax1.legend(graph_labels, frameon=False, loc="best")
-        self.ax1.set_xlabel(graph_settings["x_var"].get(), fontsize=12)
-        self.ax1.set_ylabel(graph_settings["y_var"].get(), fontsize=12)
+        self.ax1.set_xlabel(self.graph_settings["x_var"].get(), fontsize=12)
+        self.ax1.set_ylabel(self.graph_settings["y_var"].get(), fontsize=12)
 
     def lin_plot(self, info):
         def func(a, x, b):
@@ -605,7 +684,7 @@ class MyFrame:
         data_x = file_info[info]["x_data"]
         data_y = file_info[info]["y_data"]
         p_opt, p_cov = curve_fit(func, data_x, data_y)
-        self.ax1.plot(data_x, func(data_x, *p_opt), color=graph_settings["fit_color"].get(), linestyle='--',
+        self.ax1.plot(data_x, func(data_x, *p_opt), color=self.graph_settings["fit_color"].get(), linestyle='--',
                       label='fit: a=%5.3f, b=%5.3f' % tuple(p_opt))
         self.ax1.legend()
 
@@ -644,7 +723,7 @@ class MyFrame:
             for x in x_new:
                 y_new.append(func(x, *par))
 
-            self.ax1.plot(x_new, y_new, color=graph_settings["fit_color"].get(), linestyle='--')
+            self.ax1.plot(x_new, y_new, color=self.graph_settings["fit_color"].get(), linestyle='--')
             graph_labels.append('fit: a=%.1f, b=%.1f, c=%.1f, d=%.1f' % tuple(par))
 
             file_info[info]["x_new"] = x_new
@@ -654,7 +733,7 @@ class MyFrame:
             x_new = file_info[info]["x_new"]
             y_new = file_info[info]["y_new"]
 
-            self.ax1.plot(x_new, y_new, color=graph_settings["fit_color"].get(), linestyle='--')
+            self.ax1.plot(x_new, y_new, color=self.graph_settings["fit_color"].get(), linestyle='--')
             graph_labels.append('fit: a=%.1f, b=%.1f, c=%.1f, d=%.1f' % tuple(p_opt))
 
     def f_peaks(self, info):
@@ -662,7 +741,7 @@ class MyFrame:
         x = file_info[info]["x_data"]
         y2 = 1 / y
         peaks, _ = find_peaks(y2, width=((max(x) - min(x)) * .01))
-        self.ax1.plot(x[peaks], 1 / y2[peaks], "x", color=graph_settings["fit_color"].get())
+        self.ax1.plot(x[peaks], 1 / y2[peaks], "x", color=self.graph_settings["fit_color"].get())
         a = 0
         for n in x[peaks]:
             self.ax1.text(n, (1 / y2[peaks][a]) * 0.99, s=str(int(n)))
@@ -767,7 +846,7 @@ class MyFile:
                 for var1 in default_var:
                     file_info[self.filename][var1].set(default_var[var1])
 
-                start_window.list_my_dataset()
+                ado_plot.list_my_dataset()
         except NameError:
             pass
 
@@ -779,8 +858,8 @@ class NewFile:
         self.y_str = tk.StringVar()
         self.name = tk.StringVar()
         self.err = tk.StringVar()
-        self.frame = tk.Toplevel(top)
-        self.frame.geometry("+%d+%d" % (x_margin_pop, y_margin_pop))
+        self.frame = tk.Toplevel(ado_plot)
+        self.frame.geometry("+%d+%d" % (ado_plot.x_margin_pop, ado_plot.y_margin_pop))
         self.frame.title("New DataSet")
         self.frame.resizable(0, 0)
 
@@ -853,84 +932,9 @@ class NewFile:
 
             for var1 in default_var:
                 file_info[str(self.name.get())][var1].set(default_var[var1])
-            start_window.list_my_dataset()
+            ado_plot.list_my_dataset()
 
 
-top = tk.Tk()
-
-w = 800
-h = 650
-screen_width = top.winfo_screenwidth()
-screen_height = top.winfo_screenheight()
-x_margin = (screen_width - w) / 2
-y_margin = (screen_height - h) / 2
-x_margin_pop = (screen_width - w) / 1.5
-y_margin_pop = (screen_height - h) / 1.5
-
-graph_settings = {
-    "x_var": tk.StringVar(),
-    "y_var": tk.StringVar(),
-    "line_color": tk.StringVar(),
-    "x_min_var": tk.StringVar(),
-    "x_max_var": tk.StringVar(),
-    "fit": tk.StringVar(),
-    "y_min_var": tk.StringVar(),
-    "y_max_var": tk.StringVar(),
-    "plot_mode": tk.IntVar(),
-    "plot_color": tk.StringVar(),
-    "scale_mode": tk.StringVar(),
-    "x_axis_spine_color": tk.StringVar(),
-    "y_axis_spine_color": tk.StringVar(),
-    "x_axis_spine_line_width": tk.StringVar(),
-    "y_axis_spine_line_width": tk.StringVar(),
-    "legend_pos": tk.StringVar(),
-    "legend_box": tk.IntVar(),
-    "figure_height": tk.IntVar(),
-    "figure_width": tk.IntVar(),
-    "x_scale": tk.StringVar(),
-    "y_scale": tk.StringVar(),
-    "fit_color": tk.StringVar(),
-}
-
-default_graph_var = {
-    "x_var": 'test',
-    "y_var": 'test',
-    "legend_box": 0,
-    "figure_height": 6,
-    "figure_width": 8,
-    "x_scale": "linear",
-    "y_scale": "linear",
-}
-
-my_markers = {
-            "none": " ",
-            "point": ".",
-            "pixel": ",",
-            "circle": "o",
-            "triangle_down": "v",
-            "triangle_up": "^",
-            "tri_down": "1",
-            "tri_up": "2",
-            "octagon": "8",
-            "square": "s",
-            "pentagon": "p",
-            "star": "*",
-            "hexagon1": "h",
-            "hexagon2": "H",
-            "plus": "+",
-            "x": "x",
-            "diamond": "D",
-        }
-
-for var in default_graph_var:
-    graph_settings[var].set(default_graph_var[var])
-
-top.title('ADO plot')
-# You can set the geometry attribute to change the root tops size
-top.geometry("+%d+%d" % (x_margin, y_margin))  # You want the size of the app to be 500x500
-top.resizable(0, 0)  # Don't allow resizing in the x or y direction
-
-start_window = MyFrame(top)
-
-top.after(1000)
-top.mainloop()
+if __name__ == '__main__':
+    ado_plot = MyFrame() 
+    ado_plot.mainloop()
