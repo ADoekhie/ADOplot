@@ -136,23 +136,17 @@ class MyFrame(tk.Tk):
         self.frame.b8 = self.my_button(loc=self.tab_graph_ls, text="Set Figure", cm=lambda: self.my_figure_size(), y=7)
 
         # label entries for graph
-        self.frame.x_ent = ttk.Label(self.tab_graph_rs, text="X-Label:")
-        self.frame.x_ent.grid(row=1, column=1, sticky="nsew", padx=5, pady=5)
-        self.frame.x_ent = ttk.Entry(self.tab_graph_rs, textvariable=self.graph["x_var"])
-        self.frame.x_ent.grid(row=1, column=2, sticky="nsew", padx=5, pady=5)
-
-        self.frame.x_ent = ttk.Label(self.tab_graph_rs, text="Y-Label:")
-        self.frame.x_ent.grid(row=2, column=1, sticky="nsew", padx=5, pady=5)
-        self.frame.x_ent = ttk.Entry(self.tab_graph_rs, textvariable=self.graph["y_var"], width=10)
-        self.frame.x_ent.grid(row=2, column=2, sticky="nsew", padx=5, pady=5)
+        ttk.Label(self.tab_graph_rs, text="X-Label:").grid(row=1, column=1, sticky="nsew", padx=5, pady=5)
+        ttk.Entry(self.tab_graph_rs, textvariable=self.graph["x_var"]).grid(
+            row=1, column=2, sticky="nsew", padx=5, pady=5)
+        ttk.Label(self.tab_graph_rs, text="Y-Label:").grid(row=2, column=1, sticky="nsew", padx=5, pady=5)
+        ttk.Entry(self.tab_graph_rs, textvariable=self.graph["y_var"], width=10).grid(
+            row=2, column=2, sticky="nsew", padx=5, pady=5)
 
     def my_file_header(self):
-        self.frame.l1 = ttk.Label(self.tab_data_rs, text="#")
-        self.frame.l1.grid(row=1, column=1, padx=5, pady=5)
-        self.frame.l2 = ttk.Label(self.tab_data_rs, text="File:")
-        self.frame.l2.grid(row=1, column=2, padx=5, pady=5)
-        self.frame.l3 = ttk.Label(self.tab_data_rs, text="Properties:")
-        self.frame.l3.grid(row=1, column=3, padx=5, pady=5)
+        ttk.Label(self.tab_data_rs, text="#").grid(row=1, column=1, padx=5, pady=5)
+        ttk.Label(self.tab_data_rs, text="File:").grid(row=1, column=2, padx=5, pady=5)
+        ttk.Label(self.tab_data_rs, text="Properties:").grid(row=1, column=3, padx=5, pady=5)
 
     def del_all(self):
         file_info.clear()
@@ -169,17 +163,20 @@ class MyFrame(tk.Tk):
             self.my_file_header()
 
             def place_buttons(my_file, b):
-                _ = ttk.Checkbutton(self.tab_data_rs, offvalue="no", onvalue="yes",
-                                    variable=file_info[my_file]["active"], state=NORMAL)
-                _.grid(row=b, column=1, padx=5, pady=5)
-                _ = ttk.Label(self.tab_data_rs, text=file_info[my_file]["name"])
-                _.grid(row=b, column=2, padx=5, pady=5)
-                _ = ttk.Button(self.tab_data_rs, text="Set Properties", command=lambda: self.my_properties(my_file))
-                _.grid(row=b, column=3, padx=5, pady=5)
-                _ = ttk.Button(self.tab_data_rs, text="View Data", command=lambda: self.show_data(my_file))
-                _.grid(row=b, column=4, padx=5, pady=5)
-                _ = ttk.Button(self.tab_data_rs, text="Delete", command=lambda: self.relist_my_dataset(my_file))
-                _.grid(row=b, column=5, padx=5, pady=5)
+                ttk.Checkbutton(self.tab_data_rs,
+                                offvalue="no",
+                                onvalue="yes",
+                                variable=file_info[my_file]["active"],
+                                state=NORMAL).grid(
+                    row=b, column=1, padx=5, pady=5)
+                ttk.Label(self.tab_data_rs, text=file_info[my_file]["name"]).grid(
+                    row=b, column=2, padx=5, pady=5)
+                ttk.Button(self.tab_data_rs, text="Set Properties", command=lambda: self.my_properties(my_file)).grid(
+                    row=b, column=3, padx=5, pady=5)
+                ttk.Button(self.tab_data_rs, text="View Data", command=lambda: self.show_data(my_file)).grid(
+                    row=b, column=4, padx=5, pady=5)
+                ttk.Button(self.tab_data_rs, text="Delete", command=lambda: self.relist_my_dataset(my_file)).grid(
+                    row=b, column=5, padx=5, pady=5)
 
             ab = 2
             for my_file1 in file_info:
@@ -595,6 +592,7 @@ class MyFrame(tk.Tk):
         self.bar1.get_tk_widget().grid()
 
         def in_plot(my_file):
+            # gather all variables
             data = file_info[my_file]
             x = data["x_data"]
             y = data["y_data"]
@@ -602,7 +600,7 @@ class MyFrame(tk.Tk):
             l_style = data["line_style"].get()
             pre_m_style = data["marker"].get()
             m_style = self.my_markers[pre_m_style]
-            p_mode = self.graph_settings["plot_mode"].get()
+            p_mode = self.graph_settings["plot_mode"].get()  # what type of plot is it
             if data["active"].get() == 'yes':
                 graph_labels.append(data["legend"].get())
                 if p_mode == 1 or p_mode == 0:
@@ -866,25 +864,29 @@ class NewFile:
         # set new frame in window
         self.frame.frame = ttk.LabelFrame(self.frame, text="New Data Set")
         self.frame.frame.grid(row=1, column=1, stick="nsew", padx=5, pady=2.5)
-        _ = ttk.Label(self.frame.frame, text="Name")
-        _.grid(row=1, column=1, stick="nsew", padx=5, pady=2.5)
-        _ = ttk.Label(self.frame.frame, text="X")
-        _.grid(row=2, column=1, stick="nsew", padx=5, pady=2.5)
-        _ = ttk.Label(self.frame.frame, text="Y")
-        _.grid(row=3, column=1, stick="nsew", padx=5, pady=2.5)
-        _ = ttk.Label(self.frame.frame, text="Error")
-        _.grid(row=4, column=1, stick="nsew", padx=5, pady=2.5)
-        _ = ttk.Button(self.frame.frame, text="Set", command=lambda: self.do_store())
-        _.grid(row=5, column=1, stick="nsew", padx=5, pady=2.5)
 
-        _ = ttk.Entry(self.frame.frame, textvariable=self.name)
-        _.grid(row=1, column=2, stick="nsew", padx=5, pady=2.5)
-        _ = ttk.Entry(self.frame.frame, textvariable=self.x_str, width=10)
-        _.grid(row=2, column=2, stick="nsew", padx=5, pady=2.5)
-        _ = ttk.Entry(self.frame.frame, textvariable=self.y_str, width=10)
-        _.grid(row=3, column=2, stick="nsew", padx=5, pady=2.5)
-        _ = ttk.Entry(self.frame.frame, textvariable=self.err, width=10)
-        _.grid(row=4, column=2, stick="nsew", padx=5, pady=2.5)
+        label_entries = {
+            1: {"type": "lab", "t": "Name", "r": 1},
+            2: {"type": "lab", "t": "X", "r": 2},
+            3: {"type": "lab", "t": "Y", "r": 3},
+            4: {"type": "lab", "t": "Error", "r": 4},
+            5: {"type": "ent", "v": self.name, "r": 1},
+            6: {"type": "ent", "v": self.x_str, "r": 2},
+            7: {"type": "ent", "v": self.y_str, "r": 3},
+            8: {"type": "ent", "v": self.err, "r": 4},
+        }
+
+        for ele in label_entries:
+            e = label_entries[ele]
+            if e["type"] == "lab":
+                ttk.Label(self.frame.frame, text=e["t"]).grid(
+                    row=e["r"], column=1, stick="nsew", padx=5, pady=2.5)
+            if e["type"] == "ent":
+                ttk.Entry(self.frame.frame, textvariable=e["v"]).grid(
+                    row=e["r"], column=2, stick="nsew", padx=5, pady=2.5)
+
+        ttk.Button(self.frame.frame, text="Set", command=lambda: self.do_store()).grid(
+            row=5, column=1, stick="nsew", padx=5, pady=2.5)
 
     def do_store(self):
         if not self.name:
@@ -936,5 +938,5 @@ class NewFile:
 
 
 if __name__ == '__main__':
-    ado_plot = MyFrame() 
+    ado_plot = MyFrame()
     ado_plot.mainloop()
