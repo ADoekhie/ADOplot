@@ -27,6 +27,7 @@ class MyFrame(tk.Tk):
         self.y_margin = (self.screen_height - self.h) / 2
         self.x_margin_pop = (self.screen_width - self.w) / 1.5
         self.y_margin_pop = (self.screen_height - self.h) / 1.5
+        self.my_line_colors = ['Black', 'Blue', 'Green', 'Red', 'Cyan', 'Magenta', 'Yellow', 'White']
 
         self.graph_settings = {
             "x_var": tk.StringVar(),
@@ -61,6 +62,10 @@ class MyFrame(tk.Tk):
             "figure_width": 8,
             "x_scale": "linear",
             "y_scale": "linear",
+            "x_axis_spine_color": 'Black',
+            "y_axis_spine_color": 'Black',
+            "x_axis_spine_line_width": 1.25,
+            "y_axis_spine_line_width": 1.25,
         }
 
         self.my_markers = {
@@ -152,6 +157,7 @@ class MyFrame(tk.Tk):
         file_info.clear()
         for widgets in self.tab_data_rs.winfo_children():
             widgets.destroy()
+        self.my_file_header()
         self.list_my_dataset()
 
     def list_my_dataset(self):
@@ -188,6 +194,7 @@ class MyFrame(tk.Tk):
         file_info.pop(file)
         for widgets in self.tab_data_rs.winfo_children():
             widgets.destroy()
+        self.my_file_header()
         self.list_my_dataset()
 
     def x_auto(self):
@@ -265,6 +272,8 @@ class MyFrame(tk.Tk):
         self.frame.text.insert(INSERT, 'Y Data')
         self.frame.text.insert(INSERT, "\t")
         self.frame.text.insert(INSERT, 'Y Error')
+        self.frame.text.insert(INSERT, "\t")
+        self.frame.text.insert(INSERT, 'X Error')
         self.frame.text.insert(INSERT, "\n")
 
         for x in range(len(file_info[file]["x_data"])):
@@ -276,6 +285,13 @@ class MyFrame(tk.Tk):
                 self.frame.text.insert(INSERT, file_info[file]["y_error"][x])
                 self.frame.text.insert(INSERT, "\t")
             except IndexError:
+                self.frame.text.insert(INSERT, "\t")
+                pass
+            try:
+                self.frame.text.insert(INSERT, file_info[file]["x_error"][x])
+                self.frame.text.insert(INSERT, "\t")
+            except IndexError:
+                self.frame.text.insert(INSERT, "\t")
                 pass
             self.frame.text.insert(INSERT, "\n")
 
@@ -333,11 +349,24 @@ class MyFrame(tk.Tk):
         self.frame.marker = ttk.LabelFrame(self.frame.window, text="Set Marker")
         self.frame.marker.grid(row=2, column=1, sticky=N, padx=5, pady=2.5)
         if len(file_info[my_file]["y_error"]) > 0:
-            self.frame.err = ttk.LabelFrame(self.frame.window, text="Show Error Bars")
+            self.frame.err = ttk.LabelFrame(self.frame.window, text="Y Error Bars")
             self.frame.err.grid(row=2, column=2, sticky=N, padx=5, pady=2.5)
-            _ = ttk.Checkbutton(self.frame.err, onvalue=1, offvalue=1, variable=file_info[my_file]["error_bar"])
+            _ = ttk.Checkbutton(self.frame.err, onvalue=1, offvalue=1, variable=file_info[my_file]["y_error_bar"])
             set_grid(1, 1)
             _ = ttk.Label(self.frame.err, text="Cap Size")
+
+            set_grid(1, 2)
+            _ = ttk.Entry(self.frame.err, textvariable=file_info[my_file]["cap_size"], width=2)
+            set_grid(1, 3)
+        else:
+            pass
+        if len(file_info[my_file]["x_error"]) > 0:
+            self.frame.err = ttk.LabelFrame(self.frame.window, text="X Error Bars")
+            self.frame.err.grid(row=3, column=2, sticky=N, padx=5, pady=2.5)
+            _ = ttk.Checkbutton(self.frame.err, onvalue=1, offvalue=1, variable=file_info[my_file]["x_error_bar"])
+            set_grid(1, 1)
+            _ = ttk.Label(self.frame.err, text="Cap Size")
+
             set_grid(1, 2)
             _ = ttk.Entry(self.frame.err, textvariable=file_info[my_file]["cap_size"], width=2)
             set_grid(1, 3)
@@ -345,11 +374,9 @@ class MyFrame(tk.Tk):
             pass
 
         # set colors in labelframe
-        my_line_colors = ['Blue', 'Green', 'Red', 'Cyan', 'Magenta', 'Yellow', 'White']
-
         _ = ttk.Combobox(self.frame.color,
                          state="readonly",
-                         values=my_line_colors,
+                         values=self.my_line_colors,
                          justify="left",
                          textvariable=file_info[my_file]["color"],
                          width=10)
@@ -391,9 +418,9 @@ class MyFrame(tk.Tk):
                          width=10)
         set_grid(1, 1)
         _ = ttk.Button(self.frame.window, text="Set", command=lambda: self.frame.window.withdraw())
-        set_grid(3, 1)
+        set_grid(4, 1)
         _ = ttk.Button(self.frame.window, text="Close", command=lambda: self.frame.window.destroy())
-        set_grid(3, 2)
+        set_grid(4, 2)
 
     def my_fit(self):
         # open window
@@ -422,11 +449,10 @@ class MyFrame(tk.Tk):
         set_grid(a, 1, s=tk.W)
         a += 1
         # fit line colors
-        my_line_colors = ['Blue', 'Green', 'Red', 'Cyan', 'Magenta', 'Yellow', 'White']
 
         _ = ttk.Combobox(self.frame.window,
                          state="readonly",
-                         values=my_line_colors,
+                         values=self.my_line_colors,
                          justify="left",
                          textvariable=self.graph_settings["fit_color"],
                          width=10)
@@ -510,14 +536,12 @@ class MyFrame(tk.Tk):
 
         a = 1
 
-        my_line_colors = ['Blue', 'Green', 'Red', 'Cyan', 'Magenta', 'Yellow', 'White']
-
         for spines in my_spines_dict:
             _ = ttk.Label(my_spin, text=my_spines_dict[spines]["label1"])
             set_grid(a, 1)
             _ = ttk.Combobox(my_spin,
                              state="readonly",
-                             values=my_line_colors,
+                             values=self.my_line_colors,
                              justify="left",
                              textvariable=my_spines_dict[spines]["var1"],
                              width=7)
@@ -625,9 +649,18 @@ class MyFrame(tk.Tk):
                     self.fpl_plot(my_file)
                 if self.graph_settings["fit"].get() == "f_peaks":
                     self.f_peaks(my_file)
-                if data["error_bar"].get() == 1:
+                if data["y_error_bar"].get() == 1 and data["x_error_bar"].get() == 0:
                     y_error = data["y_error"]
                     self.ax1.errorbar(x, y, yerr=y_error, c=color, linestyle="none",
+                                      capsize=data["cap_size"].get(), marker=m_style)
+                if data["x_error_bar"].get() == 1 and data["y_error_bar"].get() == 0:
+                    x_error = data["x_error"]
+                    self.ax1.errorbar(x, y, xerr=x_error, c=color, linestyle="none",
+                                      capsize=data["cap_size"].get(), marker=m_style)
+                if data["y_error_bar"].get() == 1 and data["x_error_bar"].get() == 1:
+                    y_error = data["y_error"]
+                    x_error = data["x_error"]
+                    self.ax1.errorbar(x, y, yerr=y_error, xerr=x_error, c=color, linestyle="none",
                                       capsize=data["cap_size"].get(), marker=m_style)
             else:
                 pass
@@ -637,13 +670,6 @@ class MyFrame(tk.Tk):
 
         self.ax1.spines['top'].set_visible(False)
         self.ax1.spines['right'].set_visible(False)
-
-        if not self.graph_settings["y_axis_spine_color"].get():
-            self.graph_settings["y_axis_spine_line_width"].set(1.25)
-            self.graph_settings["y_axis_spine_color"].set('black')
-
-            self.graph_settings["x_axis_spine_line_width"].set(1.25)
-            self.graph_settings["x_axis_spine_color"].set('black')
 
         self.ax1.spines['left'].set_linewidth(float(self.graph_settings["y_axis_spine_line_width"].get()))
         self.ax1.spines['left'].set_color(self.graph_settings["y_axis_spine_color"].get())
@@ -770,6 +796,8 @@ class MyFrame(tk.Tk):
     def help():
         tk_message_box.showinfo("Help",
                                 "Load a or multiple .csv files containing purely one set of x and y data. "
+                                "Optionally you can added y or x error bar data "
+                                "in a third or fourth column respectively"
                                 "In the data tab you can set their visual properties like color and linestyle. "
                                 "In the graph tab you can plot the data and optimise the plot format. "
                                 "Advanced fitting options are present for use but limited at this stage. "
@@ -806,9 +834,14 @@ class MyFile:
                 self.x = self.spectra[:, 0]
                 self.y = self.spectra[:, 1]
                 try:
-                    self.err = self.spectra[:, 2]
+                    self.y_err = self.spectra[:, 2]
                 except IndexError:
-                    self.err = []
+                    self.y_err = []
+                    pass
+                try:
+                    self.x_err = self.spectra[:, 3]
+                except IndexError:
+                    self.x_err = []
                     pass
                 self.identifier = self.filename.split('/')
                 self.length = len(self.identifier)
@@ -828,9 +861,11 @@ class MyFile:
                     "active": tk.StringVar(),
                     "line_style": tk.StringVar(),
                     "marker": tk.StringVar(),
-                    "y_error": self.err,
+                    "y_error": self.y_err,
+                    "x_error": self.x_err,
                     "error_bar_color": tk.StringVar(),
-                    "error_bar": tk.IntVar(),
+                    "y_error_bar": tk.IntVar(),
+                    "x_error_bar": tk.IntVar(),
                     "cap_size": tk.IntVar(),
                 }
                 default_var = {
@@ -855,7 +890,8 @@ class NewFile:
         self.x_str = tk.StringVar()
         self.y_str = tk.StringVar()
         self.name = tk.StringVar()
-        self.err = tk.StringVar()
+        self.y_err = tk.StringVar()
+        self.x_err = tk.StringVar()
         self.frame = tk.Toplevel(ado_plot)
         self.frame.geometry("+%d+%d" % (ado_plot.x_margin_pop, ado_plot.y_margin_pop))
         self.frame.title("New DataSet")
@@ -866,14 +902,17 @@ class NewFile:
         self.frame.frame.grid(row=1, column=1, stick="nsew", padx=5, pady=2.5)
 
         label_entries = {
-            1: {"type": "lab", "t": "Name", "r": 1},
-            2: {"type": "lab", "t": "X", "r": 2},
-            3: {"type": "lab", "t": "Y", "r": 3},
-            4: {"type": "lab", "t": "Error", "r": 4},
+            0: {"type": "lab", "t": "Enter comma separated values", "r": 0},
+            1: {"type": "lab", "t": "Name (string)", "r": 1},
+            2: {"type": "lab", "t": "X (e.g: 1,2,3)", "r": 2},
+            3: {"type": "lab", "t": "Y (e.g: 1,2,3)", "r": 3},
+            4: {"type": "lab", "t": "Y Error (optional)", "r": 4},
+            41: {"type": "lab", "t": "X Error (optional)", "r": 5},
             5: {"type": "ent", "v": self.name, "r": 1},
             6: {"type": "ent", "v": self.x_str, "r": 2},
             7: {"type": "ent", "v": self.y_str, "r": 3},
-            8: {"type": "ent", "v": self.err, "r": 4},
+            8: {"type": "ent", "v": self.y_err, "r": 4},
+            81: {"type": "ent", "v": self.x_err, "r": 5},
         }
 
         for ele in label_entries:
@@ -886,7 +925,7 @@ class NewFile:
                     row=e["r"], column=2, stick="nsew", padx=5, pady=2.5)
 
         ttk.Button(self.frame.frame, text="Set", command=lambda: self.do_store()).grid(
-            row=5, column=1, stick="nsew", padx=5, pady=2.5)
+            row=6, column=1, stick="nsew", padx=5, pady=2.5)
 
     def do_store(self):
         if not self.name:
@@ -898,12 +937,32 @@ class NewFile:
             x = [float(ele) for ele in x_f]
             y_f = y_split.split(",")
             y = [float(ele) for ele in y_f]
+            if len(x) != len(y):
+                tk_message_box.showerror("Data entry error", "X/Y values do not have the same amount of numbers,"
+                                                             " please check your entry and try again.")
+                return
             try:
-                err_split = str(self.err.get())
+                err_split = str(self.y_err.get())
                 err_f = err_split.split(",")
-                err = [float(ele) for ele in err_f]
+                y_err = ([float(ele) for ele in err_f])
+                if len(x) != len(y_err) or len(y) != len(y_err):
+                    tk_message_box.showerror("Data entry error", "Entered values do not have"
+                                                                 " the same amount of numbers,"
+                                                                 " please check your entry and try again.")
+                return
             except ValueError:
-                err = []
+                y_err = []
+            try:
+                err_split = str(self.x_err.get())
+                err_f = err_split.split(",")
+                x_err = ([float(ele) for ele in err_f])
+                if len(x) != len(x_err) or len(y) != len(x_err):
+                    tk_message_box.showerror("Data entry error", "Entered values do not have"
+                                                                 " the same amount of numbers,"
+                                                                 " please check your entry and try again.")
+                return
+            except ValueError:
+                x_err = []
 
             # set variables
             file_info[str(self.name.get())] = {
@@ -919,9 +978,11 @@ class NewFile:
                 "active": tk.StringVar(),
                 "line_style": tk.StringVar(),
                 "marker": tk.StringVar(),
-                "y_error": err,
+                "y_error": y_err,
+                "x_error": x_err,
                 "error_bar_color": tk.StringVar(),
-                "error_bar": tk.IntVar(),
+                "y_error_bar": tk.IntVar(),
+                "x_error_bar": tk.IntVar(),
                 "cap_size": tk.IntVar(),
             }
             default_var = {
