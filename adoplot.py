@@ -69,7 +69,7 @@ class MyFrame(tk.Tk):
         }
 
         self.my_markers = {
-            "none": " ",
+            "none": "",
             "point": ".",
             "pixel": ",",
             "circle": "o",
@@ -407,7 +407,8 @@ class MyFrame(tk.Tk):
                           "hexagon2",
                           "plus",
                           "x",
-                          "diamond"
+                          "diamond",
+                          "none",
                           ]
 
         _ = ttk.Combobox(self.frame.marker,
@@ -618,15 +619,16 @@ class MyFrame(tk.Tk):
         def in_plot(my_file):
             # gather all variables
             data = file_info[my_file]
-            x = data["x_data"]
-            y = data["y_data"]
-            color = data["color"].get()
-            l_style = data["line_style"].get()
-            pre_m_style = data["marker"].get()
-            m_style = self.my_markers[pre_m_style]
-            p_mode = self.graph_settings["plot_mode"].get()  # what type of plot is it
+
             if data["active"].get() == 'yes':
                 graph_labels.append(data["legend"].get())
+                x = data["x_data"]
+                y = data["y_data"]
+                color = data["color"].get()
+                l_style = data["line_style"].get()
+                pre_m_style = data["marker"].get()
+                m_style = self.my_markers[pre_m_style]
+                p_mode = int(self.graph_settings["plot_mode"].get())  # what type of plot is it
                 if p_mode == 1 or p_mode == 0:
                     self.ax1.plot(x, y, c=color, linestyle=l_style, marker=m_style)
                     if self.graph_settings["x_scale"].get() != 'reverse':
@@ -641,14 +643,13 @@ class MyFrame(tk.Tk):
                     self.ax1.semilogx(x, y, c=color, linestyle=l_style)
                 if p_mode == 5:
                     self.ax1.semilogy(x, y, c=color, linestyle=l_style)
-                if not self.graph_settings["fit"].get():
-                    pass
-                if self.graph_settings["fit"].get() == "lin_reg":
-                    self.lin_plot(my_file)
-                if self.graph_settings["fit"].get() == "fpl":
-                    self.fpl_plot(my_file)
-                if self.graph_settings["fit"].get() == "f_peaks":
-                    self.f_peaks(my_file)
+                if self.graph_settings["fit"].get():
+                    fit_mode = {
+                        "lin_reg": self.lin_plot(my_file),
+                        "fpl": self.fpl_plot(my_file),
+                        "f_peaks": self.f_peaks(my_file),
+                    }
+                    _ = fit_mode[self.graph_settings["fit"].get()]
                 if data["y_error_bar"].get() == 1 and data["x_error_bar"].get() == 0:
                     y_error = data["y_error"]
                     self.ax1.errorbar(x, y, yerr=y_error, c=color, linestyle="none",
@@ -663,7 +664,7 @@ class MyFrame(tk.Tk):
                     self.ax1.errorbar(x, y, yerr=y_error, xerr=x_error, c=color, linestyle="none",
                                       capsize=data["cap_size"].get(), marker=m_style)
             else:
-                pass
+                return
 
         for my_file1 in file_info:
             in_plot(my_file1)
