@@ -597,7 +597,7 @@ class MyFrame(tk.Tk):
         graph_labels.clear()
         # open window
         self.frame.window, self.frame.frame = self.call_ado_plot("Plot")
-        self.frame.grid()
+        self.frame.frame.grid()
 
         # Declare Menu
         self.frame.menu_bar = Menu(self.frame.window)
@@ -611,12 +611,15 @@ class MyFrame(tk.Tk):
         # create canvas
         self.figure1 = plt.Figure(figsize=(self.graph_settings["figure_width"].get(),
                                            self.graph_settings["figure_height"].get()),
-                                  dpi=96, constrained_layout=False, frameon=True)
-        self.ax1 = self.figure1.add_subplot(1, 1, 1, clip_on="off")
-        self.bar1 = FigureCanvasTkAgg(self.figure1, self.frame.window)
+                                  dpi=96, constrained_layout=False, frameon=True, tight_layout={"pad": 1.75})
+        self.ax1 = self.figure1.add_subplot(1, 1, 1, clip_on="off", autoscale_on=True)
+        self.bar1 = FigureCanvasTkAgg(self.figure1, self.frame.frame)
         self.bar1.get_tk_widget().grid()
+        p_mode2 = int(self.graph_settings["plot_mode"].get())  # what type of plot is it
 
         def in_plot(my_file):
+            p_mode = int(self.graph_settings["plot_mode"].get())  # what type of plot is it
+
             # gather all variables
             data = file_info[my_file]
 
@@ -628,7 +631,6 @@ class MyFrame(tk.Tk):
                 l_style = data["line_style"].get()
                 pre_m_style = data["marker"].get()
                 m_style = self.my_markers[pre_m_style]
-                p_mode = int(self.graph_settings["plot_mode"].get())  # what type of plot is it
                 if p_mode == 1 or p_mode == 0:
                     self.ax1.plot(x, y, c=color, linestyle=l_style, marker=m_style)
                     if self.graph_settings["x_scale"].get() != 'reverse':
@@ -644,12 +646,13 @@ class MyFrame(tk.Tk):
                 if p_mode == 5:
                     self.ax1.semilogy(x, y, c=color, linestyle=l_style)
                 if self.graph_settings["fit"].get():
-                    fit_mode = {
-                        "lin_reg": self.lin_plot(my_file),
-                        "fpl": self.fpl_plot(my_file),
-                        "f_peaks": self.f_peaks(my_file),
-                    }
-                    _ = fit_mode[self.graph_settings["fit"].get()]
+                    f_mode = self.graph_settings["fit"].get()
+                    if f_mode == "lin_reg":
+                        self.lin_plot(my_file)
+                    if f_mode == "fpl":
+                        self.fpl_plot(my_file)
+                    if f_mode == "f_peaks":
+                        self.f_peaks(my_file),
                 if data["y_error_bar"].get() == 1 and data["x_error_bar"].get() == 0:
                     y_error = data["y_error"]
                     self.ax1.errorbar(x, y, yerr=y_error, c=color, linestyle="none",
@@ -678,29 +681,31 @@ class MyFrame(tk.Tk):
         self.ax1.spines['bottom'].set_linewidth(float(self.graph_settings["x_axis_spine_line_width"].get()))
         self.ax1.spines['bottom'].set_color(self.graph_settings["x_axis_spine_color"].get())
 
-        if not self.graph_settings["x_min_var"].get():
-            self.x_auto()
-        else:
-            pass
+        if p_mode2 != 3:
+            if not self.graph_settings["x_min_var"].get():
+                self.x_auto()
+            else:
+                pass
 
-        x_lim_min = float(self.graph_settings["x_min_var"].get())
-        y_lim_min = float(self.graph_settings["y_min_var"].get())
-        x_lim_max = float(self.graph_settings["x_max_var"].get())
-        y_lim_max = float(self.graph_settings["y_max_var"].get())
+            x_lim_min = float(self.graph_settings["x_min_var"].get())
+            y_lim_min = float(self.graph_settings["y_min_var"].get())
+            x_lim_max = float(self.graph_settings["x_max_var"].get())
+            y_lim_max = float(self.graph_settings["y_max_var"].get())
 
-        if self.graph_settings["y_scale"].get() != 'reverse':
-            self.ax1.set_ylim(y_lim_min, y_lim_max)
-        else:
-            self.ax1.set_ylim(y_lim_max, y_lim_min)
+            if self.graph_settings["y_scale"].get() != 'reverse':
+                self.ax1.set_ylim(y_lim_min, y_lim_max)
+            else:
+                self.ax1.set_ylim(y_lim_max, y_lim_min)
 
-        if self.graph_settings["x_scale"].get() != 'reverse':
-            self.ax1.set_xlim(x_lim_min, x_lim_max)
-        else:
-            self.ax1.set_xlim(x_lim_max, x_lim_min)
+            if self.graph_settings["x_scale"].get() != 'reverse':
+                self.ax1.set_xlim(x_lim_min, x_lim_max)
+            else:
+                self.ax1.set_xlim(x_lim_max, x_lim_min)
 
         self.ax1.legend(graph_labels, frameon=False, loc="best")
-        self.ax1.set_xlabel(self.graph_settings["x_var"].get(), fontsize=12)
-        self.ax1.set_ylabel(self.graph_settings["y_var"].get(), fontsize=12)
+        self.ax1.set_xlabel(self.graph_settings["x_var"].get(), fontsize=10)
+        self.ax1.set_ylabel(self.graph_settings["y_var"].get(), fontsize=10)
+        self.bar1.draw()
 
     def lin_plot(self, info):
         def func(a, x, b):
