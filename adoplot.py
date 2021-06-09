@@ -38,13 +38,17 @@ class MyFrame(tk.Tk):
             "fit": tk.StringVar(),
             "y_min_var": tk.StringVar(),
             "y_max_var": tk.StringVar(),
-            "plot_mode": tk.IntVar(),
+            "plot_mode": tk.StringVar(),
             "plot_color": tk.StringVar(),
             "scale_mode": tk.StringVar(),
             "x_axis_spine_color": tk.StringVar(),
             "y_axis_spine_color": tk.StringVar(),
+            "top_spine_color": tk.StringVar(),
+            "right_spine_color": tk.StringVar(),
             "x_axis_spine_line_width": tk.StringVar(),
             "y_axis_spine_line_width": tk.StringVar(),
+            "top_spine_line_width": tk.StringVar(),
+            "right_spine_line_width": tk.StringVar(),
             "legend_pos": tk.StringVar(),
             "legend_box": tk.IntVar(),
             "figure_height": tk.IntVar(),
@@ -52,6 +56,12 @@ class MyFrame(tk.Tk):
             "x_scale": tk.StringVar(),
             "y_scale": tk.StringVar(),
             "fit_color": tk.StringVar(),
+            "bar": tk.IntVar(),
+            "plotted": [],
+            "x_label_font": tk.IntVar(),
+            "y_label_font": tk.IntVar(),
+            "x_tick_size": tk.IntVar(),
+            "y_tick_size": tk.IntVar(),
         }
 
         self.default_graph_var = {
@@ -66,6 +76,15 @@ class MyFrame(tk.Tk):
             "y_axis_spine_color": 'Black',
             "x_axis_spine_line_width": 1.25,
             "y_axis_spine_line_width": 1.25,
+            "plot_mode": "Line",
+            "top_spine_color": "White",
+            "right_spine_color": "White",
+            "top_spine_line_width": 1.25,
+            "right_spine_line_width": 1.25,
+            "x_label_font": 10,
+            "y_label_font": 10,
+            "x_tick_size": 10,
+            "y_tick_size": 10,
         }
 
         self.my_markers = {
@@ -117,7 +136,7 @@ class MyFrame(tk.Tk):
         # tab graph labelframe and grid
         self.tab_graph_ls = ttk.LabelFrame(self.tab_graph, text='Options')
         self.tab_graph_ls.grid(row=1, column=1, sticky="nsew", ipadx=5, ipady=5, padx=5, pady=5)
-        self.tab_graph_rs = ttk.LabelFrame(self.tab_graph, text='Graph')
+        self.tab_graph_rs = ttk.LabelFrame(self.tab_graph, text='Graph Labels')
         self.tab_graph_rs.grid(row=1, column=2, sticky="nsew", ipadx=5, ipady=5, padx=5, pady=5)
         self.tab_graph_rs1 = ttk.LabelFrame(self.tab_graph, text='Advanced')
         self.tab_graph_rs1.grid(row=1, column=3, sticky="nsew", ipadx=5, ipady=5, padx=5, pady=5)
@@ -136,9 +155,10 @@ class MyFrame(tk.Tk):
         self.frame.b4 = self.my_button(loc=self.tab_graph_ls, text="Set Type", cm=lambda: self.graph_type(), y=2)
         self.frame.b5 = self.my_button(loc=self.tab_graph_ls, text="Set X/Y", cm=lambda: self.x_y(), y=3)
         self.frame.b6a = self.my_button(loc=self.tab_graph_rs1, text="Fit Options", cm=lambda: self.my_fit(), y=1)
-        self.frame.b7 = self.my_button(loc=self.tab_graph_ls, text="Set Spines", cm=lambda: self.my_spines(), y=5)
+        self.frame.b6b = self.my_button(loc=self.tab_graph_rs1, text="Font Style", cm=lambda: self.my_font(), y=2)
+        self.frame.b7 = self.my_button(loc=self.tab_graph_rs1, text="Set Spines", cm=lambda: self.my_spines(), y=3)
         self.frame.b8 = self.my_button(loc=self.tab_graph_ls, text="Set Legend", cm=lambda: self.my_legend(), y=6)
-        self.frame.b8 = self.my_button(loc=self.tab_graph_ls, text="Set Figure", cm=lambda: self.my_figure_size(), y=7)
+        self.frame.b8 = self.my_button(loc=self.tab_graph_rs1, text="Set Figure", cm=lambda: self.my_figure_size(), y=4)
 
         # label entries for graph
         ttk.Label(self.tab_graph_rs, text="X-Label:").grid(row=1, column=1, sticky="nsew", padx=5, pady=5)
@@ -312,28 +332,63 @@ class MyFrame(tk.Tk):
 
         gtype3 = ttk.LabelFrame(self.frame.window, text="Scale Type Y")
         gtype3.grid(row=1, column=3, sticky="nsew", padx=5, pady=2.5)
-        # check buttons for graph type
-        graph_type = ['Line', 'Scatter', 'Bar', 'X_Log', 'Y_Log']
-        scale_type = ['linear', 'log', 'symlog', 'logit', 'reverse']
-        a = 1
-        for my_type in graph_type:
-            _ = ttk.Checkbutton(gtype, text=my_type, onvalue=a, offvalue=0,
-                                variable=self.graph_settings["plot_mode"])
-            set_grid(a, 1)
-            a += 1
 
-        b = 1
-        for a_type in scale_type:
-            _ = ttk.Checkbutton(gtype2, text=a_type, onvalue=a_type, offvalue="linear",
-                                variable=self.graph_settings["x_scale"])
-            set_grid(b, 1)
-            _ = ttk.Checkbutton(gtype3, text=a_type, onvalue=a_type, offvalue="linear",
-                                variable=self.graph_settings["y_scale"])
-            set_grid(b, 1)
-            b += 1
+        # check buttons for graph type
+        graph_type = ['Line', 'Scatter', 'Bar', 'X_log', 'Y_log']
+        scale_type = ['linear', 'log', 'symlog', 'logit', 'reverse']
+
+        _ = ttk.Combobox(gtype,
+                         state="readonly",
+                         values=graph_type,
+                         justify="left",
+                         textvariable=self.graph_settings["plot_mode"],
+                         width=10)
+        set_grid(1, 1)
+
+        _ = ttk.Combobox(gtype2,
+                         state="readonly",
+                         values=scale_type,
+                         justify="left",
+                         textvariable=self.graph_settings["x_scale"],
+                         width=10)
+        set_grid(1, 1)
+        _ = ttk.Combobox(gtype3,
+                         state="readonly",
+                         values=scale_type,
+                         justify="left",
+                         textvariable=self.graph_settings["y_scale"],
+                         width=10)
+        set_grid(1, 1)
 
         _ = ttk.Button(self.frame.window, text="OK", command=lambda: self.frame.window.destroy())
-        set_grid(a, 1)
+        set_grid(2, 1)
+
+    def my_font(self):
+        # open new window
+        self.frame.window, self.frame.frame = self.call_ado_plot("Set Font")
+
+        # LABEL FRAME
+        font_options = ttk.LabelFrame(self.frame.window, text="Font Options")
+        font_options.grid(row=1, column=1, padx=5, pady=2.5)
+
+        # Options
+        my_font_dict = {
+            "X Label Font Size": "x_label_font",
+            "Y Label Font Size": "y_label_font",
+            "X Tick Font Size": "x_tick_size",
+            "Y Tick Font Size": "y_tick_size",
+        }
+
+        a = 1
+        for fo in my_font_dict:
+            ttk.Label(font_options, text=fo).grid(row=a, column=1, sticky="w", padx=5, pady=2.5)
+            ttk.Entry(font_options, textvariable=self.graph_settings[my_font_dict[fo]], width=3).grid(
+                row=a, column=2, padx=5, pady=2.5)
+            a += 1
+
+        # close window
+        ttk.Button(self.frame.window, text="OK", command=lambda: self.frame.window.destroy()).grid(
+            row=a, column=1, columnspan=2)
 
     def my_properties(self, my_file):
         # open window
@@ -503,15 +558,15 @@ class MyFrame(tk.Tk):
 
         _ = ttk.Label(my_leg, text="Height (inches):")
         set_grid(1, 1)
-        _ = ttk.Entry(my_leg, textvariable=info["figure_height"], width=5)
+        _ = ttk.Entry(my_leg, textvariable=info["figure_height"], width=2)
         set_grid(1, 2)
-        _ = ttk.Label(my_leg, text=" " + str(info["figure_height"].get() * 2.54) + " cm")
+        _ = ttk.Label(my_leg, text="= " + str(info["figure_height"].get() * 2.54) + " cm")
         set_grid(1, 3)
         _ = ttk.Label(my_leg, text="Width (inches):")
         set_grid(2, 1)
-        _ = ttk.Entry(my_leg, textvariable=info["figure_width"], width=5)
+        _ = ttk.Entry(my_leg, textvariable=info["figure_width"], width=2)
         set_grid(2, 2)
-        _ = ttk.Label(my_leg, text=" " + str(info["figure_width"].get() * 2.54) + " cm")
+        _ = ttk.Label(my_leg, text="= " + str(info["figure_width"].get() * 2.54) + " cm")
         set_grid(2, 3)
 
         _ = ttk.Button(self.frame.window, text="OK", command=lambda: self.frame.window.destroy())
@@ -532,7 +587,11 @@ class MyFrame(tk.Tk):
             1: {"label1": "X Axis Color:", "var1": self.graph_settings["x_axis_spine_color"],
                 "label2": "Y Axis Line Width:", "var2": self.graph_settings["x_axis_spine_line_width"]},
             2: {"label1": "Y Axis Color:", "var1": self.graph_settings["y_axis_spine_color"],
-                "label2": "Y Axis Line Width:", "var2": self.graph_settings["y_axis_spine_line_width"]}
+                "label2": "Y Axis Line Width:", "var2": self.graph_settings["y_axis_spine_line_width"]},
+            3: {"label1": "Top Spine Color:", "var1": self.graph_settings["top_spine_color"],
+                "label2": "Top Spine Line Width:", "var2": self.graph_settings["top_spine_line_width"]},
+            4: {"label1": "Right Spine Color:", "var1": self.graph_settings["right_spine_color"],
+                "label2": "Right Spine Line Width:", "var2": self.graph_settings["right_spine_line_width"]}
         }
 
         a = 1
@@ -611,14 +670,15 @@ class MyFrame(tk.Tk):
         # create canvas
         self.figure1 = plt.Figure(figsize=(self.graph_settings["figure_width"].get(),
                                            self.graph_settings["figure_height"].get()),
-                                  dpi=96, constrained_layout=False, frameon=True, tight_layout={"pad": 1.75})
+                                  dpi=96, constrained_layout=False,
+                                  frameon=True, tight_layout={"rect": (0, 0, .95, .95)})
         self.ax1 = self.figure1.add_subplot(1, 1, 1, clip_on="off", autoscale_on=True)
         self.bar1 = FigureCanvasTkAgg(self.figure1, self.frame.frame)
         self.bar1.get_tk_widget().grid()
-        p_mode2 = int(self.graph_settings["plot_mode"].get())  # what type of plot is it
+        p_mode2 = self.graph_settings["plot_mode"].get()  # what type of plot is it
 
         def in_plot(my_file):
-            p_mode = int(self.graph_settings["plot_mode"].get())  # what type of plot is it
+            p_mode = self.graph_settings["plot_mode"].get()  # what type of plot is it
 
             # gather all variables
             data = file_info[my_file]
@@ -631,19 +691,24 @@ class MyFrame(tk.Tk):
                 l_style = data["line_style"].get()
                 pre_m_style = data["marker"].get()
                 m_style = self.my_markers[pre_m_style]
-                if p_mode == 1 or p_mode == 0:
+                if p_mode == "Line":
                     self.ax1.plot(x, y, c=color, linestyle=l_style, marker=m_style)
                     if self.graph_settings["x_scale"].get() != 'reverse':
                         self.ax1.set_xscale(self.graph_settings["x_scale"].get())
                     if self.graph_settings["y_scale"].get() != 'reverse':
                         self.ax1.set_yscale(self.graph_settings["y_scale"].get())
-                if p_mode == 2:
+                if p_mode == "Scatter":
                     self.ax1.scatter(x, y, c=color)
-                if p_mode == 3:
-                    self.ax1.bar(x, y)
-                if p_mode == 4:
+                if p_mode == "Bar":
+                    width = 0.35
+                    if self.graph_settings["bar"].get() != 0:
+                        self.ax1.bar(x + width / 2, y, width=width, label=my_file)
+                    else:
+                        self.ax1.bar(x - width / 2, y, width=width, label=my_file)
+                        self.graph_settings["bar"].set(1)
+                if p_mode == "X_log":
                     self.ax1.semilogx(x, y, c=color, linestyle=l_style)
-                if p_mode == 5:
+                if p_mode == "Y_log":
                     self.ax1.semilogy(x, y, c=color, linestyle=l_style)
                 if self.graph_settings["fit"].get():
                     f_mode = self.graph_settings["fit"].get()
@@ -672,16 +737,24 @@ class MyFrame(tk.Tk):
         for my_file1 in file_info:
             in_plot(my_file1)
 
-        self.ax1.spines['top'].set_visible(False)
-        self.ax1.spines['right'].set_visible(False)
+        #   self.ax1.spines['top'].set_visible(False)
+        #   self.ax1.spines['right'].set_visible(False)
+        my_spine_dict = {
+            "top": {"color": self.graph_settings["top_spine_color"].get(),
+                    "line_w": float(self.graph_settings["top_spine_line_width"].get())},
+            "right": {"color": self.graph_settings["right_spine_color"].get(),
+                      "line_w": float(self.graph_settings["right_spine_line_width"].get())},
+            "left": {"color": self.graph_settings["y_axis_spine_color"].get(),
+                     "line_w": float(self.graph_settings["y_axis_spine_line_width"].get())},
+            "bottom": {"color": self.graph_settings["x_axis_spine_color"].get(),
+                       "line_w": float(self.graph_settings["x_axis_spine_line_width"].get())},
+        }
 
-        self.ax1.spines['left'].set_linewidth(float(self.graph_settings["y_axis_spine_line_width"].get()))
-        self.ax1.spines['left'].set_color(self.graph_settings["y_axis_spine_color"].get())
+        for pos in my_spine_dict:
+            self.ax1.spines[pos].set_linewidth(my_spine_dict[pos]["line_w"])
+            self.ax1.spines[pos].set_color(my_spine_dict[pos]["color"])
 
-        self.ax1.spines['bottom'].set_linewidth(float(self.graph_settings["x_axis_spine_line_width"].get()))
-        self.ax1.spines['bottom'].set_color(self.graph_settings["x_axis_spine_color"].get())
-
-        if p_mode2 != 3:
+        if p_mode2 != "Bar":
             if not self.graph_settings["x_min_var"].get():
                 self.x_auto()
             else:
@@ -702,10 +775,15 @@ class MyFrame(tk.Tk):
             else:
                 self.ax1.set_xlim(x_lim_max, x_lim_min)
 
+        x_label_font = self.graph_settings["x_label_font"].get()
+        y_label_font = self.graph_settings["y_label_font"].get()
         self.ax1.legend(graph_labels, frameon=False, loc="best")
-        self.ax1.set_xlabel(self.graph_settings["x_var"].get(), fontsize=10)
-        self.ax1.set_ylabel(self.graph_settings["y_var"].get(), fontsize=10)
-        self.bar1.draw()
+        self.ax1.set_xlabel(self.graph_settings["x_var"].get(), fontsize=x_label_font)
+        self.ax1.set_ylabel(self.graph_settings["y_var"].get(), fontsize=y_label_font)
+        self.ax1.minorticks_on()
+        self.ax1.tick_params(axis="x", labelsize=self.graph_settings["x_tick_size"].get())
+        self.ax1.tick_params(axis="y",  labelsize=self.graph_settings["y_tick_size"].get())
+        self.graph_settings["bar"].set(0)
 
     def lin_plot(self, info):
         def func(a, x, b):
