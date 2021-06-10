@@ -107,6 +107,21 @@ class MyFrame(tk.Tk):
             "diamond": "D",
         }
 
+        self.grid_opt = {"sticky": tk.NSEW,
+                         "padx": 2.5,
+                         "pady": 2.5,
+                         "ipadx": 2.5,
+                         "ipady": 2.5,
+                         }
+
+        self.grid_frame_opt = {
+            "sticky": tk.NSEW,
+            "padx": 5,
+            "pady": 5,
+            "ipadx": 5,
+            "ipady": 5,
+        }
+
         for var in self.default_graph_var:
             self.graph_settings[var].set(self.default_graph_var[var])
 
@@ -129,17 +144,17 @@ class MyFrame(tk.Tk):
 
         # tab data labelframe and grid
         self.tab_data_ls = ttk.LabelFrame(self.tab_data, text='Options')
-        self.tab_data_ls.grid(row=1, column=1, sticky="nsew", ipadx=5, ipady=5, padx=5, pady=5)
+        self.tab_data_ls.grid(row=1, column=1, **self.grid_frame_opt)
         self.tab_data_rs = ttk.LabelFrame(self.tab_data, text='Data View')
-        self.tab_data_rs.grid(row=1, column=2, sticky="nsew", ipadx=5, ipady=5, padx=5, pady=5)
+        self.tab_data_rs.grid(row=1, column=2, **self.grid_frame_opt)
 
         # tab graph labelframe and grid
         self.tab_graph_ls = ttk.LabelFrame(self.tab_graph, text='Options')
-        self.tab_graph_ls.grid(row=1, column=1, sticky="nsew", ipadx=5, ipady=5, padx=5, pady=5)
+        self.tab_graph_ls.grid(row=1, column=1, **self.grid_frame_opt)
         self.tab_graph_rs = ttk.LabelFrame(self.tab_graph, text='Graph Labels')
-        self.tab_graph_rs.grid(row=1, column=2, sticky="nsew", ipadx=5, ipady=5, padx=5, pady=5)
+        self.tab_graph_rs.grid(row=1, column=2, **self.grid_frame_opt)
         self.tab_graph_rs1 = ttk.LabelFrame(self.tab_graph, text='Advanced')
-        self.tab_graph_rs1.grid(row=1, column=3, sticky="nsew", ipadx=5, ipady=5, padx=5, pady=5)
+        self.tab_graph_rs1.grid(row=1, column=3, **self.grid_frame_opt)
 
         self.my_tabs()
         self.my_file_header()
@@ -161,12 +176,12 @@ class MyFrame(tk.Tk):
         self.frame.b8 = self.my_button(loc=self.tab_graph_rs1, text="Set Figure", cm=lambda: self.my_figure_size(), y=4)
 
         # label entries for graph
-        ttk.Label(self.tab_graph_rs, text="X-Label:").grid(row=1, column=1, sticky="nsew", padx=5, pady=5)
+        ttk.Label(self.tab_graph_rs, text="X-Label:").grid(row=1, column=1, **self.grid_frame_opt)
         ttk.Entry(self.tab_graph_rs, textvariable=self.graph["x_var"]).grid(
-            row=1, column=2, sticky="nsew", padx=5, pady=5)
-        ttk.Label(self.tab_graph_rs, text="Y-Label:").grid(row=2, column=1, sticky="nsew", padx=5, pady=5)
+            row=1, column=2, **self.grid_frame_opt)
+        ttk.Label(self.tab_graph_rs, text="Y-Label:").grid(row=2, column=1, **self.grid_frame_opt)
         ttk.Entry(self.tab_graph_rs, textvariable=self.graph["y_var"], width=10).grid(
-            row=2, column=2, sticky="nsew", padx=5, pady=5)
+            row=2, column=2, **self.grid_frame_opt)
 
     def my_file_header(self):
         ttk.Label(self.tab_data_rs, text="#").grid(row=1, column=1, padx=5, pady=5)
@@ -394,18 +409,18 @@ class MyFrame(tk.Tk):
         # open window
         self.frame.window, self.frame.frame = self.call_ado_plot("Set Properties")
 
-        def set_grid(gr, gc, s="nsew"):
-            _.grid(sticky=s, row=gr, column=gc, padx=5, pady=2.5)
+        def set_grid(gr, gc):
+            _.grid(row=gr, column=gc, **self.grid_opt)
 
         self.frame.color = ttk.LabelFrame(self.frame.window, text="Set Color")
-        self.frame.color.grid(row=1, column=1, sticky=N, padx=5, pady=2.5)
+        self.frame.color.grid(row=1, column=1, **self.grid_opt)
         self.frame.line = ttk.LabelFrame(self.frame.window, text="Set Line")
-        self.frame.line.grid(row=1, column=2, sticky=N, padx=5, pady=2.5)
+        self.frame.line.grid(row=2, column=1, **self.grid_opt)
         self.frame.marker = ttk.LabelFrame(self.frame.window, text="Set Marker")
-        self.frame.marker.grid(row=2, column=1, sticky=N, padx=5, pady=2.5)
+        self.frame.marker.grid(row=3, column=1, **self.grid_opt)
         if len(file_info[my_file]["y_error"]) > 0:
             self.frame.err = ttk.LabelFrame(self.frame.window, text="Y Error Bars")
-            self.frame.err.grid(row=2, column=2, sticky=N, padx=5, pady=2.5)
+            self.frame.err.grid(row=1, column=2, **self.grid_opt)
             _ = ttk.Checkbutton(self.frame.err, onvalue=1, offvalue=1, variable=file_info[my_file]["y_error_bar"])
             set_grid(1, 1)
             _ = ttk.Label(self.frame.err, text="Cap Size")
@@ -417,7 +432,7 @@ class MyFrame(tk.Tk):
             pass
         if len(file_info[my_file]["x_error"]) > 0:
             self.frame.err = ttk.LabelFrame(self.frame.window, text="X Error Bars")
-            self.frame.err.grid(row=3, column=2, sticky=N, padx=5, pady=2.5)
+            self.frame.err.grid(row=2, column=2, **self.grid_opt)
             _ = ttk.Checkbutton(self.frame.err, onvalue=1, offvalue=1, variable=file_info[my_file]["x_error_bar"])
             set_grid(1, 1)
             _ = ttk.Label(self.frame.err, text="Cap Size")
@@ -427,7 +442,19 @@ class MyFrame(tk.Tk):
             set_grid(1, 3)
         else:
             pass
-
+        if len(file_info[my_file]["x_error"]) > 0 or len(file_info[my_file]["y_error"]) > 0:
+            self.frame.err = ttk.LabelFrame(self.frame.window, text="Error Bar Color")
+            self.frame.err.grid(row=3, column=2, **self.grid_opt)
+            # set colors in labelframe
+            _ = ttk.Combobox(self.frame.err,
+                             state="readonly",
+                             values=self.my_line_colors,
+                             justify="left",
+                             textvariable=file_info[my_file]["error_color"],
+                             width=10)
+            _.grid(row=2, column=1, columnspan=3, **self.grid_opt)
+        else:
+            pass
         # set colors in labelframe
         _ = ttk.Combobox(self.frame.color,
                          state="readonly",
@@ -474,9 +501,9 @@ class MyFrame(tk.Tk):
                          width=10)
         set_grid(1, 1)
         _ = ttk.Button(self.frame.window, text="Set", command=lambda: self.frame.window.withdraw())
-        set_grid(4, 1)
+        set_grid(5, 1)
         _ = ttk.Button(self.frame.window, text="Close", command=lambda: self.frame.window.destroy())
-        set_grid(4, 2)
+        set_grid(5, 2)
 
     def my_fit(self):
         # open window
@@ -672,7 +699,7 @@ class MyFrame(tk.Tk):
                                            self.graph_settings["figure_height"].get()),
                                   dpi=96, constrained_layout=False,
                                   frameon=True, tight_layout={"rect": (0, 0, .95, .95)})
-        self.ax1 = self.figure1.add_subplot(1, 1, 1, clip_on="off", autoscale_on=True)
+        self.ax1 = self.figure1.add_subplot(1, 1, 1, clip_on="off")
         self.bar1 = FigureCanvasTkAgg(self.figure1, self.frame.frame)
         self.bar1.get_tk_widget().grid()
         p_mode2 = self.graph_settings["plot_mode"].get()  # what type of plot is it
@@ -718,19 +745,24 @@ class MyFrame(tk.Tk):
                         self.fpl_plot(my_file)
                     if f_mode == "f_peaks":
                         self.f_peaks(my_file),
+                error_bar_opt = {
+                    "c": color,
+                    "ecolor": file_info[my_file]["error_color"].get(),
+                    "linestyle": "none",
+                    "capsize": data["cap_size"].get(),
+                    "marker": m_style,
+                    "barsabove": False,
+                }
                 if data["y_error_bar"].get() == 1 and data["x_error_bar"].get() == 0:
                     y_error = data["y_error"]
-                    self.ax1.errorbar(x, y, yerr=y_error, c=color, linestyle="none",
-                                      capsize=data["cap_size"].get(), marker=m_style)
+                    self.ax1.errorbar(x, y, yerr=y_error, **error_bar_opt)
                 if data["x_error_bar"].get() == 1 and data["y_error_bar"].get() == 0:
                     x_error = data["x_error"]
-                    self.ax1.errorbar(x, y, xerr=x_error, c=color, linestyle="none",
-                                      capsize=data["cap_size"].get(), marker=m_style)
+                    self.ax1.errorbar(x, y, xerr=x_error, **error_bar_opt)
                 if data["y_error_bar"].get() == 1 and data["x_error_bar"].get() == 1:
                     y_error = data["y_error"]
                     x_error = data["x_error"]
-                    self.ax1.errorbar(x, y, yerr=y_error, xerr=x_error, c=color, linestyle="none",
-                                      capsize=data["cap_size"].get(), marker=m_style)
+                    self.ax1.errorbar(x, y, yerr=y_error, xerr=x_error, **error_bar_opt)
             else:
                 return
 
@@ -765,15 +797,19 @@ class MyFrame(tk.Tk):
             x_lim_max = float(self.graph_settings["x_max_var"].get())
             y_lim_max = float(self.graph_settings["y_max_var"].get())
 
-            if self.graph_settings["y_scale"].get() != 'reverse':
-                self.ax1.set_ylim(y_lim_min, y_lim_max)
-            else:
+            if self.graph_settings["y_scale"].get() == 'reverse':
                 self.ax1.set_ylim(y_lim_max, y_lim_min)
-
-            if self.graph_settings["x_scale"].get() != 'reverse':
-                self.ax1.set_xlim(x_lim_min, x_lim_max)
+            elif self.graph_settings["y_scale"].get() == "log":
+                self.ax1.set_ylim(abs(y_lim_min), abs(y_lim_max))
             else:
+                self.ax1.set_ylim(y_lim_min, y_lim_max)
+
+            if self.graph_settings["x_scale"].get() == 'reverse':
                 self.ax1.set_xlim(x_lim_max, x_lim_min)
+            elif self.graph_settings["x_scale"].get() == "log":
+                self.ax1.set_xlim(abs(x_lim_min), abs(x_lim_max))
+            else:
+                self.ax1.set_xlim(x_lim_min, x_lim_max)
 
         x_label_font = self.graph_settings["x_label_font"].get()
         y_label_font = self.graph_settings["y_label_font"].get()
@@ -782,7 +818,7 @@ class MyFrame(tk.Tk):
         self.ax1.set_ylabel(self.graph_settings["y_var"].get(), fontsize=y_label_font)
         self.ax1.minorticks_on()
         self.ax1.tick_params(axis="x", labelsize=self.graph_settings["x_tick_size"].get())
-        self.ax1.tick_params(axis="y",  labelsize=self.graph_settings["y_tick_size"].get())
+        self.ax1.tick_params(axis="y", labelsize=self.graph_settings["y_tick_size"].get())
         self.graph_settings["bar"].set(0)
 
     def lin_plot(self, info):
@@ -951,8 +987,11 @@ class MyFile:
                     "y_error_bar": tk.IntVar(),
                     "x_error_bar": tk.IntVar(),
                     "cap_size": tk.IntVar(),
+                    "error_color": tk.StringVar(),
                 }
+
                 default_var = {
+                    "error_color": "Black",
                     "color": "black",
                     "legend": "data",
                     "active": "yes",
@@ -1068,8 +1107,10 @@ class NewFile:
                 "y_error_bar": tk.IntVar(),
                 "x_error_bar": tk.IntVar(),
                 "cap_size": tk.IntVar(),
+                "error_color": tk.StringVar(),
             }
             default_var = {
+                "error_color": "Black",
                 "color": "black",
                 "legend": "data",
                 "active": "yes",
