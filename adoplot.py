@@ -5,10 +5,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from tkinter import *
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from tkinter.filedialog import askopenfilenames, asksaveasfile
+from tkinter.filedialog import askopenfilenames, askopenfilename, asksaveasfile
 import tkinter.messagebox as tk_message_box
 from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
+import json
 
 file_info = {}
 graph_labels = []
@@ -122,6 +123,16 @@ class MyFrame(tk.Tk):
             "ipady": 5,
         }
 
+        self.annos = {}
+
+        self.anno_opt = {
+            "title": tk.StringVar(),
+            "x1": tk.StringVar(),
+            "y1": tk.StringVar(),
+            "x2": tk.StringVar(),
+            "y2": tk.StringVar(),
+        }
+
         for var in self.default_graph_var:
             self.graph_settings[var].set(self.default_graph_var[var])
 
@@ -172,7 +183,8 @@ class MyFrame(tk.Tk):
         self.frame.b6a = self.my_button(loc=self.tab_graph_rs1, text="Fit Options", cm=lambda: self.my_fit(), y=1)
         self.frame.b6b = self.my_button(loc=self.tab_graph_rs1, text="Font Style", cm=lambda: self.my_font(), y=2)
         self.frame.b7 = self.my_button(loc=self.tab_graph_rs1, text="Set Spines", cm=lambda: self.my_spines(), y=3)
-        self.frame.b8 = self.my_button(loc=self.tab_graph_ls, text="Set Legend", cm=lambda: self.my_legend(), y=6)
+        self.frame.b8 = self.my_button(loc=self.tab_graph_ls, text="Set Legend", cm=lambda: self.my_legend(), y=4)
+        self.frame.b8a = self.my_button(loc=self.tab_graph_ls, text="Annotate", cm=lambda: self.my_annotate(), y=5)
         self.frame.b8 = self.my_button(loc=self.tab_graph_rs1, text="Set Figure", cm=lambda: self.my_figure_size(), y=4)
 
         # label entries for graph
@@ -204,20 +216,16 @@ class MyFrame(tk.Tk):
             self.my_file_header()
 
             def place_buttons(my_file, b):
-                ttk.Checkbutton(self.tab_data_rs,
-                                offvalue="no",
-                                onvalue="yes",
-                                variable=file_info[my_file]["active"],
-                                state=NORMAL).grid(
-                    row=b, column=1, padx=5, pady=5)
-                ttk.Label(self.tab_data_rs, text=file_info[my_file]["name"]).grid(
-                    row=b, column=2, padx=5, pady=5)
-                ttk.Button(self.tab_data_rs, text="Set Properties", command=lambda: self.my_properties(my_file)).grid(
-                    row=b, column=3, padx=5, pady=5)
-                ttk.Button(self.tab_data_rs, text="View Data", command=lambda: self.show_data(my_file)).grid(
-                    row=b, column=4, padx=5, pady=5)
-                ttk.Button(self.tab_data_rs, text="Delete", command=lambda: self.relist_my_dataset(my_file)).grid(
-                    row=b, column=5, padx=5, pady=5)
+                plc = self.tab_data_rs
+                d = my_file
+                cms = [self.my_properties, self.show_data, self.relist_my_dataset]
+                grid_opt = {"padx": 5, "pady": 5}
+                ttk.Checkbutton(plc, offvalue="no", onvalue="yes", variable=file_info[d]["active"],
+                                state=NORMAL).grid(row=b, column=1, **grid_opt)
+                ttk.Label(plc, text=file_info[my_file]["name"]).grid(row=b, column=2, **grid_opt)
+                ttk.Button(plc, text="Set Properties", command=lambda: cms[0](d)).grid(row=b, column=3, **grid_opt)
+                ttk.Button(plc, text="View Data", command=lambda: cms[1](d)).grid(row=b, column=4, **grid_opt)
+                ttk.Button(plc, text="Delete", command=lambda: cms[2](d)).grid(row=b, column=5, **grid_opt)
 
             ab = 2
             for my_file1 in file_info:
@@ -271,6 +279,12 @@ class MyFrame(tk.Tk):
         self.frame.file_menu.add_command(label="Delete all data", command=self.del_all)
         self.frame.file_menu.add_command(label="Exit", command=self.quit)
         self.frame.menu_bar.add_cascade(label="File", menu=self.frame.file_menu)
+
+        # Data Menu
+        self.frame.data_menu = Menu(self.frame.menu_bar, tearoff=0)
+        self.frame.data_menu.add_command(label="Save Config", command=self.save_config)
+        self.frame.data_menu.add_command(label="Load Config", command=self.load_config)
+        self.frame.menu_bar.add_cascade(label="Data", menu=self.frame.data_menu)
 
         # Help menu
         self.frame.help_menu = Menu(self.frame.menu_bar, tearoff=0)
@@ -642,6 +656,64 @@ class MyFrame(tk.Tk):
         _ = ttk.Button(self.frame.window, text="OK", command=lambda: self.frame.window.destroy())
         set_grid(a, 1)
 
+    def my_annotate(self):
+        # open window
+        self.frame.window, self.frame.frame = self.call_ado_plot("Annotations")
+        anno_frame = ttk.LabelFrame(self.frame.window, text="List of annotations")
+        g_a = {
+            "padx": 5,
+            "pady": 5,
+            "sticky": tk.NSEW,
+        }
+        anno_frame.grid(row=1, column=1, **g_a)
+        ttk.Label(anno_frame, text="Index").grid(row=1, column=1, **g_a)
+        ttk.Label(anno_frame, text="Label").grid(row=1, column=2, **g_a)
+
+        try:
+            b = 2
+            for a in self.annos:
+                ttk.Label(anno_frame, text=a).grid(row=b, column=1, **g_a)
+                ttk.Label(anno_frame, text=self.annos[a]["title"]).grid(row=b, column=2, **g_a)
+                b += 1
+        except IndexError or KeyError:
+            pass
+
+        anno_frame2 = ttk.LabelFrame(self.frame.window, text="Add annotation")
+        anno_frame2.grid(row=2, column=1, **g_a)
+
+        def adding():
+            self.frame.window.destroy()
+            self.add_annotate()
+
+        ttk.Button(anno_frame2, text="Add", command=lambda: adding()).grid(row=1, column=1, **g_a)
+
+    def add_annotate(self):
+        # open window
+        self.frame.window, self.frame.frame = self.call_ado_plot("Add Annotate")
+        anno_frame = ttk.LabelFrame(self.frame.window, text="Annotate")
+        g_a = {
+            "padx": 5,
+            "pady": 5,
+            "sticky": tk.NSEW,
+        }
+        anno_frame.grid(row=1, column=1, **g_a)
+
+        def add_anno():
+            ind = len(self.annos) + 1
+            self.annos[ind] = {}
+            for opt2 in self.anno_opt:
+                self.annos[ind][opt2] = self.anno_opt[opt2].get()
+            self.frame.window.destroy()
+            self.my_annotate()
+            print(self.annos)
+
+        a = 1
+        for opt in self.anno_opt:
+            ttk.Label(anno_frame, text=opt).grid(row=a, column=1, **g_a)
+            ttk.Entry(anno_frame, textvariable=self.anno_opt[opt], width=10).grid(row=a, column=2, **g_a)
+            a += 1
+        ttk.Button(anno_frame, text="Add to Figure", command=lambda: add_anno()).grid(column=1, columnspan=2)
+
     def x_y(self):
         # open window
         self.frame.window, self.frame.frame = self.call_ado_plot("Set X/Y limits")
@@ -718,14 +790,23 @@ class MyFrame(tk.Tk):
                 l_style = data["line_style"].get()
                 pre_m_style = data["marker"].get()
                 m_style = self.my_markers[pre_m_style]
+                plotting_mode = {
+                    "Line": {"type": self.ax1.plot,
+                             "params": {"c": color, "linestyle": l_style, "marker": m_style}},
+                    "Scatter": {"type": self.ax1.scatter,
+                                "params": {"c": color}},
+                    "X_log": {"type": self.ax1.semilogx,
+                              "params": {"c": color, "linestyle": l_style}},
+                    "Y_log": {"type": self.ax1.semilogy,
+                              "params": {"c": color, "linestyle": l_style}},
+                }
+                if p_mode != "Bar":
+                    plotting_mode[p_mode]["type"](x, y, **plotting_mode[p_mode]["params"])
                 if p_mode == "Line":
-                    self.ax1.plot(x, y, c=color, linestyle=l_style, marker=m_style)
                     if self.graph_settings["x_scale"].get() != 'reverse':
                         self.ax1.set_xscale(self.graph_settings["x_scale"].get())
                     if self.graph_settings["y_scale"].get() != 'reverse':
                         self.ax1.set_yscale(self.graph_settings["y_scale"].get())
-                if p_mode == "Scatter":
-                    self.ax1.scatter(x, y, c=color)
                 if p_mode == "Bar":
                     width = 0.35
                     if self.graph_settings["bar"].get() != 0:
@@ -733,18 +814,15 @@ class MyFrame(tk.Tk):
                     else:
                         self.ax1.bar(x - width / 2, y, width=width, label=my_file)
                         self.graph_settings["bar"].set(1)
-                if p_mode == "X_log":
-                    self.ax1.semilogx(x, y, c=color, linestyle=l_style)
-                if p_mode == "Y_log":
-                    self.ax1.semilogy(x, y, c=color, linestyle=l_style)
                 if self.graph_settings["fit"].get():
                     f_mode = self.graph_settings["fit"].get()
-                    if f_mode == "lin_reg":
-                        self.lin_plot(my_file)
-                    if f_mode == "fpl":
-                        self.fpl_plot(my_file)
-                    if f_mode == "f_peaks":
-                        self.f_peaks(my_file),
+                    mode = {
+                        "lin_reg": self.lin_plot,
+                        "fpl": self.fpl_plot,
+                        "f_peaks": self.f_peaks,
+                    }
+                    mode[f_mode](my_file)
+
                 error_bar_opt = {
                     "c": color,
                     "ecolor": file_info[my_file]["error_color"].get(),
@@ -763,14 +841,18 @@ class MyFrame(tk.Tk):
                     y_error = data["y_error"]
                     x_error = data["x_error"]
                     self.ax1.errorbar(x, y, yerr=y_error, xerr=x_error, **error_bar_opt)
+                if len(self.annos) > 0:
+                    for ent in self.annos:
+                        text = self.annos[ent]["title"]
+                        xy = (float(self.annos[ent]["x1"]), float(self.annos[ent]["y1"]))
+                        xytext = (float(self.annos[ent]["x2"]), float(self.annos[ent]["y2"]))
+                        self.ax1.annotate(text=text, xy=xy, xytext=xytext)
             else:
                 return
 
         for my_file1 in file_info:
             in_plot(my_file1)
 
-        #   self.ax1.spines['top'].set_visible(False)
-        #   self.ax1.spines['right'].set_visible(False)
         my_spine_dict = {
             "top": {"color": self.graph_settings["top_spine_color"].get(),
                     "line_w": float(self.graph_settings["top_spine_line_width"].get())},
@@ -837,17 +919,18 @@ class MyFrame(tk.Tk):
         def func(xe, a, b, cc, d):
             return d + ((a - d) / (1 + ((xe / cc) ** b)))
 
-        data_y = file_info[info]["y_data"]
-        data_x = file_info[info]["x_data"]
+        dat = file_info[info]
+        data_y = dat["y_data"]
+        data_x = dat["x_data"]
 
-        if file_info[info].get("p_opt") is None:
+        if dat.get("p_opt") is None:
             try:
                 if data_y[0] < data_y[-1]:
                     p_opt, p_cov = curve_fit(func, data_x, data_y, bounds=([-4, -np.inf, min(data_x), min(data_y)],
                                                                            [min(data_y), np.inf, max(data_x),
                                                                             max(data_y)]), method="trf")
-                    file_info[info]["p_opt"] = p_opt
-                    file_info[info]["p_cov"] = p_cov
+                    dat["p_opt"] = p_opt
+                    dat["p_cov"] = p_cov
 
                 elif data_y[0] > data_y[-1]:
                     p_opt, p_cov = curve_fit(func, data_x, data_y, bounds=([min(data_y), -np.inf, min(data_x), -4],
@@ -855,27 +938,27 @@ class MyFrame(tk.Tk):
                                                                             np.inf,
                                                                             max(data_x),
                                                                             min(data_y)]), method="trf")
-                    file_info[info]["p_opt"] = p_opt
-                    file_info[info]["p_cov"] = p_cov
+                    dat["p_opt"] = p_opt
+                    dat["p_cov"] = p_cov
             except ValueError:
                 return
 
             y_new = []
             x_new = np.arange(min(data_x), max(data_x), (len(data_x) / 10))
 
-            par = file_info[info]["p_opt"]
+            par = dat["p_opt"]
             for x in x_new:
                 y_new.append(func(x, *par))
 
             self.ax1.plot(x_new, y_new, color=self.graph_settings["fit_color"].get(), linestyle='--')
             graph_labels.append('fit: a=%.1f, b=%.1f, c=%.1f, d=%.1f' % tuple(par))
 
-            file_info[info]["x_new"] = x_new
-            file_info[info]["y_new"] = y_new
+            dat["x_new"] = x_new
+            dat["y_new"] = y_new
         else:
-            p_opt = file_info[info]["p_opt"]
-            x_new = file_info[info]["x_new"]
-            y_new = file_info[info]["y_new"]
+            p_opt = dat["p_opt"]
+            x_new = dat["x_new"]
+            y_new = dat["y_new"]
 
             self.ax1.plot(x_new, y_new, color=self.graph_settings["fit_color"].get(), linestyle='--')
             graph_labels.append('fit: a=%.1f, b=%.1f, c=%.1f, d=%.1f' % tuple(p_opt))
@@ -902,6 +985,78 @@ class MyFrame(tk.Tk):
             self.figure1.savefig(self.frame.save_file.name, dpi=300)
         except AttributeError:
             pass
+
+    def load_config(self):
+        x = askopenfilename()
+        f = open(x)
+        f_info = f.readline()
+        y = json.loads(f_info)
+        print(y, type(y))
+        for fl in y:
+            MyFile(fl)
+            for k, v in y[fl].items():
+                try:
+                    if k in file_info[fl]:
+                        file_info[fl][k].set(v)
+                    else:
+                        try:
+                            file_info[fl][k] = type(v)
+                            file_info[fl][k].set(v)
+                        except AttributeError:
+                            file_info[fl][k] = v
+                except AttributeError:
+                    file_info[fl][k] = v
+        f_info = f.readline()
+        y = json.loads(f_info)
+        for d, v in y.items():
+            try:
+                self.graph_settings[d].set(v)
+            except AttributeError:
+                self.graph_settings[d] = v
+        print(file_info)
+
+    def save_config(self):
+        data = [('adoconf (*.cfg)', '*.cfg')]
+        x = asksaveasfile(filetypes=data, defaultextension=data)
+        n64 = np.int64(64)
+        n32 = np.int64(32)
+        nda = np.ndarray([1, 2, 4], dtype=np.int64)
+        test = tk.StringVar()
+        test2 = [1, 2, 3]
+        test3 = tk.IntVar()
+
+        def dict_json(my_data):
+            data_store = {}
+            if my_data == file_info:
+                for info in my_data:
+                    data_store[info] = {}
+                    for d, v in my_data[info].items():
+                        print(d, type(v))
+                        try:
+                            if isinstance(v, type(n64)) or isinstance(v, type(n32)) or isinstance(v, type(nda)):
+                                data_store[info][d] = v.tolist()
+                            if isinstance(v, type(test)) or isinstance(v, type(test3)):
+                                data_store[info][d] = v.get()
+                            if isinstance(v, type(test2)):
+                                data_store[info][d] = v
+                        except AttributeError:
+                            data_store[info][d] = v
+            if my_data == self.graph_settings or self.annos:
+                for d, v in my_data.items():
+                    try:
+                        data_store[d] = v.get()
+                    except AttributeError:
+                        data_store[d] = v
+            if my_data == graph_labels:
+                data_store["labels"] = graph_labels
+            return data_store
+
+        if x.name and x.name is not None:
+            f = open(x.name, "w")
+            to_save = [file_info, self.graph_settings, graph_labels, self.annos]
+            for dm in to_save:
+                f.write(json.dumps(dict_json(dm)) + "\n")
+            f.close()
 
     @staticmethod
     def do_nothing():
