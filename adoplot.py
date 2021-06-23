@@ -435,7 +435,7 @@ class MyFrame(tk.Tk):
         if len(file_info[my_file]["y_error"]) > 0:
             self.frame.err = ttk.LabelFrame(self.frame.window, text="Y Error Bars")
             self.frame.err.grid(row=1, column=2, **self.grid_opt)
-            _ = ttk.Checkbutton(self.frame.err, onvalue=1, offvalue=1, variable=file_info[my_file]["y_error_bar"])
+            _ = ttk.Checkbutton(self.frame.err, onvalue=1, offvalue=0, variable=file_info[my_file]["y_error_bar"])
             set_grid(1, 1)
             _ = ttk.Label(self.frame.err, text="Cap Size")
 
@@ -447,7 +447,7 @@ class MyFrame(tk.Tk):
         if len(file_info[my_file]["x_error"]) > 0:
             self.frame.err = ttk.LabelFrame(self.frame.window, text="X Error Bars")
             self.frame.err.grid(row=2, column=2, **self.grid_opt)
-            _ = ttk.Checkbutton(self.frame.err, onvalue=1, offvalue=1, variable=file_info[my_file]["x_error_bar"])
+            _ = ttk.Checkbutton(self.frame.err, onvalue=1, offvalue=0, variable=file_info[my_file]["x_error_bar"])
             set_grid(1, 1)
             _ = ttk.Label(self.frame.err, text="Cap Size")
 
@@ -705,7 +705,6 @@ class MyFrame(tk.Tk):
                 self.annos[ind][opt2] = self.anno_opt[opt2].get()
             self.frame.window.destroy()
             self.my_annotate()
-            print(self.annos)
 
         a = 1
         for opt in self.anno_opt:
@@ -991,7 +990,6 @@ class MyFrame(tk.Tk):
         f = open(x)
         f_info = f.readline()
         y = json.loads(f_info)
-        print(y, type(y))
         for fl in y:
             MyFile(fl)
             for k, v in y[fl].items():
@@ -1013,7 +1011,6 @@ class MyFrame(tk.Tk):
                 self.graph_settings[d].set(v)
             except AttributeError:
                 self.graph_settings[d] = v
-        print(file_info)
 
     def save_config(self):
         data = [('adoconf (*.cfg)', '*.cfg')]
@@ -1031,7 +1028,6 @@ class MyFrame(tk.Tk):
                 for info in my_data:
                     data_store[info] = {}
                     for d, v in my_data[info].items():
-                        print(d, type(v))
                         try:
                             if isinstance(v, type(n64)) or isinstance(v, type(n32)) or isinstance(v, type(nda)):
                                 data_store[info][d] = v.tolist()
