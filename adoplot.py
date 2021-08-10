@@ -63,6 +63,7 @@ class MyFrame(tk.Tk):
             "y_label_font": tk.IntVar(),
             "x_tick_size": tk.IntVar(),
             "y_tick_size": tk.IntVar(),
+            "interactive": tk.IntVar(),
         }
 
         self.default_graph_var = {
@@ -86,6 +87,7 @@ class MyFrame(tk.Tk):
             "y_label_font": 10,
             "x_tick_size": 10,
             "y_tick_size": 10,
+            "interactive": 0,
         }
 
         self.my_markers = {
@@ -174,7 +176,7 @@ class MyFrame(tk.Tk):
     def my_tabs(self):
         # tab data buttons
         self.frame.b1 = self.my_button(loc=self.tab_data_ls, text='Load File(s)', cm=lambda: Import(), y=1)
-        self.frame.b1 = self.my_button(loc=self.tab_data_ls, text='New Dataset', cm=lambda: NewFile(), y=2)
+        self.frame.b1b = self.my_button(loc=self.tab_data_ls, text='New Dataset', cm=lambda: NewFile(), y=2)
 
         # tab graph buttons
         self.frame.b3 = self.my_button(loc=self.tab_graph_ls, text="Plot Graph", cm=lambda: self.plot(), y=1)
@@ -186,6 +188,7 @@ class MyFrame(tk.Tk):
         self.frame.b8 = self.my_button(loc=self.tab_graph_ls, text="Set Legend", cm=lambda: self.my_legend(), y=4)
         self.frame.b8a = self.my_button(loc=self.tab_graph_ls, text="Annotate", cm=lambda: self.my_annotate(), y=5)
         self.frame.b8 = self.my_button(loc=self.tab_graph_rs1, text="Set Figure", cm=lambda: self.my_figure_size(), y=4)
+        self.frame.b8b = self.my_button(loc=self.tab_graph_rs1, text="Edit Figure", cm=lambda: self.edit_picture(), y=5)
 
         # label entries for graph
         ttk.Label(self.tab_graph_rs, text="X-Label:").grid(row=1, column=1, **self.grid_frame_opt)
@@ -284,7 +287,7 @@ class MyFrame(tk.Tk):
         self.frame.data_menu = Menu(self.frame.menu_bar, tearoff=0)
         self.frame.data_menu.add_command(label="Save Config", command=self.save_config)
         self.frame.data_menu.add_command(label="Load Config", command=self.load_config)
-        self.frame.menu_bar.add_cascade(label="Data", menu=self.frame.data_menu)
+        self.frame.menu_bar.add_cascade(label="Config", menu=self.frame.data_menu)
 
         # Help menu
         self.frame.help_menu = Menu(self.frame.menu_bar, tearoff=0)
@@ -766,6 +769,9 @@ class MyFrame(tk.Tk):
         self.frame.window.config(menu=self.frame.menu_bar)
 
         # create canvas
+        if self.graph_settings["interactive"].get() == 1:
+            print("code reached")
+            plt.ion()
         self.figure1 = plt.Figure(figsize=(self.graph_settings["figure_width"].get(),
                                            self.graph_settings["figure_height"].get()),
                                   dpi=96, constrained_layout=False,
@@ -973,6 +979,10 @@ class MyFrame(tk.Tk):
             self.ax1.text(n, (1 / y2[peaks][a]) * 0.99, s=str(int(n)))
             a += 1
 
+    def edit_picture(self):
+        self.graph_settings["interactive"].set(1)
+        self.plot()
+
     def save_plot(self):
         try:
             files = [('All Files', '*.*'),
@@ -1080,9 +1090,9 @@ class Import:
         self.filename = askopenfilenames()
         if len(self.filename) > 1:
             for file in self.filename:
-                MyFile(file)
+                MyFile(file).run_all()
         elif len(self.filename) == 1:
-            MyFile(self.filename[0])
+            MyFile(self.filename[0]).run_all()
         else:
             return
 
@@ -1090,82 +1100,137 @@ class Import:
 class MyFile:
     def __init__(self, file):
         self.filename = file
+        self.data, self.spectra, self.x, self.y = None, None, None, None
+        self.x_err, self.y_err = None, None
+        self.identifier, self.length, self.name = None, None, None
+
+    def run_all(self):
+        self.process_file()
+        self.file_type()
+        self.file_id()
+        self.set_var()
+
+    def process_file(self):
+        # try to process if possible and check for file type
         try:
             if not self.filename:
                 pass
-            elif self.filename.find(".csv") == -1:
-                tk_message_box.showerror("File error", "Please use x/y data in .csv file type only.")
-                pass
+            elif self.filename.find(".csv") == -1 and self.filename.find(".dat") == -1:
+                tk_message_box.showerror("File error", "Please use x/y data in .csv or .dat file type "
+                                                       "only.")
             elif self.filename in file_info:
                 pass
             else:
-                # process file
-                self.data = pd.read_csv(self.filename, sep=',')
-                self.spectra = self.data.values
-                self.x = self.spectra[:, 0]
-                self.y = self.spectra[:, 1]
-                try:
-                    self.y_err = self.spectra[:, 2]
-                except IndexError:
-                    self.y_err = []
-                    pass
-                try:
-                    self.x_err = self.spectra[:, 3]
-                except IndexError:
-                    self.x_err = []
-                    pass
-                self.identifier = self.filename.split('/')
-                self.length = len(self.identifier)
-                self.name = self.identifier[self.length - 1]
-
-                # set variables
-                file_info[self.filename] = {
-                    "color": tk.StringVar(),
-                    "legend": tk.StringVar(),
-                    "x_data": self.x,
-                    "y_data": self.y,
-                    "name": self.name,
-                    "x_min": min(self.x),
-                    "x_max": max(self.x),
-                    "y_min": min(self.y),
-                    "y_max": max(self.y),
-                    "active": tk.StringVar(),
-                    "line_style": tk.StringVar(),
-                    "marker": tk.StringVar(),
-                    "y_error": self.y_err,
-                    "x_error": self.x_err,
-                    "error_bar_color": tk.StringVar(),
-                    "y_error_bar": tk.IntVar(),
-                    "x_error_bar": tk.IntVar(),
-                    "cap_size": tk.IntVar(),
-                    "error_color": tk.StringVar(),
-                }
-
-                default_var = {
-                    "error_color": "Black",
-                    "color": "black",
-                    "legend": "data",
-                    "active": "yes",
-                    "line_style": "solid",
-                    "marker": "none",
-                }
-
-                for var1 in default_var:
-                    file_info[self.filename][var1].set(default_var[var1])
-
-                ado_plot.list_my_dataset()
+                self.file_type()
         except NameError:
-            pass
+            return
+
+    def file_type(self):
+        # process CSV file
+        if self.filename.find(".csv") > 0:
+            self.data = pd.read_csv(self.filename, sep=',')
+            self.spectra = self.data.values
+            self.x = self.spectra[:, 0]
+            self.y = self.spectra[:, 1]
+            try:
+                self.y_err = self.spectra[:, 2]
+            except IndexError:
+                self.y_err = []
+                pass
+            try:
+                self.x_err = self.spectra[:, 3]
+            except IndexError:
+                self.x_err = []
+                pass
+        # process space-spaced .dat file
+        if self.filename.find(".dat") > 0:
+            self.x = []
+            self.y = []
+            self.y_err = []
+            self.x_err = []
+            f = open(self.filename, "r")
+            test = {}
+            # loop through opened .dat file into test dictionary
+            a = 1
+            for ly in f:
+                test[a] = {}
+                ar = ly.split()
+                b = 1
+                for n in ar:
+                    test[a][b] = n
+                    b += 1
+                a += 1
+                #   pass values test dict to self.x and self.y array
+                for var in test:
+                    try:
+                        self.x.append(float(test[var][1]))
+                        self.y.append(float(test[var][2]))
+                    except ValueError:
+                        pass
+                    try:
+                        self.y_err.append(float(test[var][3]))
+                    except KeyError:
+                        pass
+                    try:
+                        self.x_err.append(float(test[var][4]))
+                    except KeyError:
+                        pass
+            f.close()  # close openend file
+
+    def file_id(self):
+        # set file parameters
+        self.identifier = self.filename.split('/')
+        self.length = len(self.identifier)
+        self.name = self.identifier[self.length - 1]
+
+    def set_var(self):
+        # set variables in app data array file_info
+        file_info[self.filename] = {
+            "color": tk.StringVar(),
+            "legend": tk.StringVar(),
+            "x_data": self.x,
+            "y_data": self.y,
+            "name": self.name,
+            "x_min": min(self.x),
+            "x_max": max(self.x),
+            "y_min": min(self.y),
+            "y_max": max(self.y),
+            "active": tk.StringVar(),
+            "line_style": tk.StringVar(),
+            "marker": tk.StringVar(),
+            "y_error": self.y_err,
+            "x_error": self.x_err,
+            "error_bar_color": tk.StringVar(),
+            "y_error_bar": tk.IntVar(),
+            "x_error_bar": tk.IntVar(),
+            "cap_size": tk.IntVar(),
+            "error_color": tk.StringVar(),
+        }
+
+        default_var = {
+            "error_color": "Black",
+            "color": "black",
+            "legend": "data",
+            "active": "yes",
+            "line_style": "solid",
+            "marker": "none",
+        }
+
+        for var1 in default_var:
+            file_info[self.filename][var1].set(default_var[var1])
+
+        ado_plot.list_my_dataset()
 
 
-class NewFile:
+class NewFile(MyFile):
 
     def __init__(self):
+        super().__init__(None)
         self.x_str = tk.StringVar()
         self.y_str = tk.StringVar()
         self.name = tk.StringVar()
-        self.y_err = tk.StringVar()
-        self.x_err = tk.StringVar()
+        self.y_err_str = tk.StringVar()
+        self.x_err_str = tk.StringVar()
         self.frame = tk.Toplevel(ado_plot)
         self.frame.geometry("+%d+%d" % (ado_plot.x_margin_pop, ado_plot.y_margin_pop))
         self.frame.title("New DataSet")
@@ -1185,8 +1250,8 @@ class NewFile:
             5: {"type": "ent", "v": self.name, "r": 1},
             6: {"type": "ent", "v": self.x_str, "r": 2},
             7: {"type": "ent", "v": self.y_str, "r": 3},
-            8: {"type": "ent", "v": self.y_err, "r": 4},
-            81: {"type": "ent", "v": self.x_err, "r": 5},
+            8: {"type": "ent", "v": self.y_err_str, "r": 4},
+            81: {"type": "ent", "v": self.x_err_str, "r": 5},
         }
 
         for ele in label_entries:
@@ -1202,76 +1267,48 @@ class NewFile:
             row=6, column=1, stick="nsew", padx=5, pady=2.5)
 
     def do_store(self):
+        # this function grabs the strings and converts them into lists for iteration and plotting
         if not self.name:
             return
         else:
-            x_split = str(self.x_str.get())
-            y_split = str(self.y_str.get())
-            x_f = x_split.split(",")
-            x = [float(ele) for ele in x_f]
-            y_f = y_split.split(",")
-            y = [float(ele) for ele in y_f]
-            if len(x) != len(y):
+            # conver x/y string submitted data into x/y data lists
+            erc_com = [self.x, self.y]
+            erc_com_str = [self.x_str, self.y_str]
+            for dstr, ddata in zip(erc_com, erc_com_str):
+                t_split = str(ddata)
+                f = t_split.split(",")
+                erc_com = [float(ele) for ele in f]
+            # then check if x and y are same length
+            if len(self.x) != len(self.y):
                 tk_message_box.showerror("Data entry error", "X/Y values do not have the same amount of numbers,"
                                                              " please check your entry and try again.")
                 return
-            try:
-                err_split = str(self.y_err.get())
-                err_f = err_split.split(",")
-                y_err = ([float(ele) for ele in err_f])
-                if len(x) != len(y_err) or len(y) != len(y_err):
-                    tk_message_box.showerror("Data entry error", "Entered values do not have"
-                                                                 " the same amount of numbers,"
-                                                                 " please check your entry and try again.")
-                return
-            except ValueError:
-                y_err = []
-            try:
-                err_split = str(self.x_err.get())
-                err_f = err_split.split(",")
-                x_err = ([float(ele) for ele in err_f])
-                if len(x) != len(x_err) or len(y) != len(x_err):
-                    tk_message_box.showerror("Data entry error", "Entered values do not have"
-                                                                 " the same amount of numbers,"
-                                                                 " please check your entry and try again.")
-                return
-            except ValueError:
-                x_err = []
-
-            # set variables
-            file_info[str(self.name.get())] = {
-                "color": tk.StringVar(),
-                "legend": tk.StringVar(),
-                "x_data": x,
-                "y_data": y,
-                "name": str(self.name.get()),
-                "x_min": min(x),
-                "x_max": max(x),
-                "y_min": min(y),
-                "y_max": max(y),
-                "active": tk.StringVar(),
-                "line_style": tk.StringVar(),
-                "marker": tk.StringVar(),
-                "y_error": y_err,
-                "x_error": x_err,
-                "error_bar_color": tk.StringVar(),
-                "y_error_bar": tk.IntVar(),
-                "x_error_bar": tk.IntVar(),
-                "cap_size": tk.IntVar(),
-                "error_color": tk.StringVar(),
-            }
-            default_var = {
-                "error_color": "Black",
-                "color": "black",
-                "legend": "data",
-                "active": "yes",
-                "line_style": "solid",
-                "marker": "none",
-            }
-
-            for var1 in default_var:
-                file_info[str(self.name.get())][var1].set(default_var[var1])
-            ado_plot.list_my_dataset()
+            # retrieve inputted data for x/y errors
+            erc_str = [self.x_err_str, self.y_err_str]
+            erc_val = [self.x_err, self.y_err]
+            for check, val, comp in zip(erc_str, erc_val, erc_com):
+                try:
+                    err_split = str(check.get())
+                    err_f = err_split.split(",")
+                    val = ([float(ele) for ele in err_f])
+                    # check if there are any variables and if so compare to the length of x/y
+                    # to make sure they're the same
+                    if len(val) > 1:
+                        print(val)
+                        if len(val) != len(comp):
+                            tk_message_box.showerror("Data entry error", "Entered  values " + str(val) + " do not have"
+                                                                         " the same amount of numbers,"
+                                                                         "please check your entry and try "
+                                                                         "again.")
+                        return
+                except ValueError:
+                    return
+            # after successfully entering the new data set, close the window and return to the overview
+            # by processing this in the super class
+            self.frame.destroy()
+            self.filename = self.name.get()
+            self.file_id()
+            self.set_var()
 
 
 if __name__ == '__main__':
