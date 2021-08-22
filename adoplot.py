@@ -12,7 +12,7 @@ from scipy.signal import find_peaks
 import json
 
 file_info = {}
-graph_labels = []
+graph_labels = {"labels": []}
 
 
 class MyFrame(tk.Tk):
@@ -135,6 +135,12 @@ class MyFrame(tk.Tk):
             "y2": tk.StringVar(),
         }
 
+        self.anno_labels = ["Annotation label",
+                            "label (start) point x-axis",
+                            "label (start) point y-axis",
+                            "end point x-axis (use for arrow annotation)",
+                            "end point y-axis (use for arrow annotation)"]
+
         for var in self.default_graph_var:
             self.graph_settings[var].set(self.default_graph_var[var])
 
@@ -212,9 +218,9 @@ class MyFrame(tk.Tk):
 
     def list_my_dataset(self):
         if not file_info:
-            return
+            pass
         elif len(file_info) == 0:
-            return
+            pass
         else:
             self.my_file_header()
 
@@ -659,6 +665,11 @@ class MyFrame(tk.Tk):
         _ = ttk.Button(self.frame.window, text="OK", command=lambda: self.frame.window.destroy())
         set_grid(a, 1)
 
+    def relist_anno(self, an, window):
+        self.annos.pop(an)
+        window.destroy()
+        self.my_annotate()
+
     def my_annotate(self):
         # open window
         self.frame.window, self.frame.frame = self.call_ado_plot("Annotations")
@@ -672,17 +683,21 @@ class MyFrame(tk.Tk):
         ttk.Label(anno_frame, text="Index").grid(row=1, column=1, **g_a)
         ttk.Label(anno_frame, text="Label").grid(row=1, column=2, **g_a)
 
+        b = 2
         try:
-            b = 2
             for a in self.annos:
                 ttk.Label(anno_frame, text=a).grid(row=b, column=1, **g_a)
                 ttk.Label(anno_frame, text=self.annos[a]["title"]).grid(row=b, column=2, **g_a)
+                ttk.Button(anno_frame, text='Delete', command=lambda: self.relist_anno(a, self.frame.window)).grid(
+                    row=b, column=4, **g_a)
                 b += 1
         except IndexError or KeyError:
             pass
 
         anno_frame2 = ttk.LabelFrame(self.frame.window, text="Add annotation")
-        anno_frame2.grid(row=2, column=1, **g_a)
+        anno_frame2.grid(row=1, column=2, **g_a)
+        anno_frame3 = ttk.Button(self.frame.window, text="OK", command=lambda: self.frame.window.destroy())
+        anno_frame3.grid(row=b, column=1, **g_a)
 
         def adding():
             self.frame.window.destroy()
@@ -710,11 +725,12 @@ class MyFrame(tk.Tk):
             self.my_annotate()
 
         a = 1
-        for opt in self.anno_opt:
+        for opt, labs in zip(self.anno_opt, self.anno_labels):
             ttk.Label(anno_frame, text=opt).grid(row=a, column=1, **g_a)
             ttk.Entry(anno_frame, textvariable=self.anno_opt[opt], width=10).grid(row=a, column=2, **g_a)
+            ttk.Label(anno_frame, text=labs).grid(row=a, column=3, **g_a)
             a += 1
-        ttk.Button(anno_frame, text="Add to Figure", command=lambda: add_anno()).grid(column=1, columnspan=2)
+        ttk.Button(anno_frame, text="Add to Figure", command=lambda: add_anno()).grid(column=2)
 
     def x_y(self):
         # open window
@@ -750,11 +766,10 @@ class MyFrame(tk.Tk):
     def plot(self):
         if not file_info.keys():
             tk.messagebox.showerror("No data loaded", "Please load a data file or select one active.")
-            return
         else:
             pass
 
-        graph_labels.clear()
+        graph_labels["labels"].clear()
         # open window
         self.frame.window, self.frame.frame = self.call_ado_plot("Plot")
         self.frame.frame.grid()
@@ -788,7 +803,7 @@ class MyFrame(tk.Tk):
             data = file_info[my_file]
 
             if data["active"].get() == 'yes':
-                graph_labels.append(data["legend"].get())
+                graph_labels["labels"].append(data["legend"].get())
                 x = data["x_data"]
                 y = data["y_data"]
                 color = data["color"].get()
@@ -850,10 +865,17 @@ class MyFrame(tk.Tk):
                     for ent in self.annos:
                         text = self.annos[ent]["title"]
                         xy = (float(self.annos[ent]["x1"]), float(self.annos[ent]["y1"]))
-                        xytext = (float(self.annos[ent]["x2"]), float(self.annos[ent]["y2"]))
-                        self.ax1.annotate(text=text, xy=xy, xytext=xytext)
+                        try:
+                            xytext = (float(self.annos[ent]["x2"]), float(self.annos[ent]["y2"]))
+                        except ValueError:
+                            xytext = 0
+                            pass
+                        if xytext != 0:
+                            self.ax1.annotate(text=text, xy=xy, xytext=xytext, arrowprops={'arrowstyle': '->'})
+                        else:
+                            self.ax1.annotate(text=text, xy=xy)
             else:
-                return
+                pass
 
         for my_file1 in file_info:
             in_plot(my_file1)
@@ -900,7 +922,7 @@ class MyFrame(tk.Tk):
 
         x_label_font = self.graph_settings["x_label_font"].get()
         y_label_font = self.graph_settings["y_label_font"].get()
-        self.ax1.legend(graph_labels, frameon=False, loc="best")
+        self.ax1.legend(graph_labels["labels"], frameon=False, loc="best")
         self.ax1.set_xlabel(self.graph_settings["x_var"].get(), fontsize=x_label_font)
         self.ax1.set_ylabel(self.graph_settings["y_var"].get(), fontsize=y_label_font)
         self.ax1.minorticks_on()
@@ -946,7 +968,7 @@ class MyFrame(tk.Tk):
                     dat["p_opt"] = p_opt
                     dat["p_cov"] = p_cov
             except ValueError:
-                return
+                pass
 
             y_new = []
             x_new = np.arange(min(data_x), max(data_x), (len(data_x) / 10))
@@ -956,7 +978,7 @@ class MyFrame(tk.Tk):
                 y_new.append(func(x, *par))
 
             self.ax1.plot(x_new, y_new, color=self.graph_settings["fit_color"].get(), linestyle='--')
-            graph_labels.append('fit: a=%.1f, b=%.1f, c=%.1f, d=%.1f' % tuple(par))
+            graph_labels["labels"].append('fit: a=%.1f, b=%.1f, c=%.1f, d=%.1f' % tuple(par))
 
             dat["x_new"] = x_new
             dat["y_new"] = y_new
@@ -966,7 +988,7 @@ class MyFrame(tk.Tk):
             y_new = dat["y_new"]
 
             self.ax1.plot(x_new, y_new, color=self.graph_settings["fit_color"].get(), linestyle='--')
-            graph_labels.append('fit: a=%.1f, b=%.1f, c=%.1f, d=%.1f' % tuple(p_opt))
+            graph_labels["labels"].append('fit: a=%.1f, b=%.1f, c=%.1f, d=%.1f' % tuple(p_opt))
 
     def f_peaks(self, info):
         y = file_info[info]["y_data"]
@@ -983,8 +1005,8 @@ class MyFrame(tk.Tk):
         self.graph_settings["interactive"].set(1)
         self.plot()
 
-    def save_plot(self):
-        try:
+    def save_plot(self):  # function to save the displayed graph
+        try:  # attempt to save the image based on the following data formats
             files = [('All Files', '*.*'),
                      ('Python Files', '*.py'),
                      ('Text Document', '*.txt'),
@@ -992,35 +1014,44 @@ class MyFrame(tk.Tk):
                      ('Document Image', '*.tif')]
             self.frame.save_file = asksaveasfile(filetypes=files, defaultextension=files)
             self.figure1.savefig(self.frame.save_file.name, dpi=300)
-        except AttributeError:
+        except AttributeError:  # pass when cancel is pressed
             pass
 
     def load_config(self):
-        x = askopenfilename()
-        f = open(x)
-        f_info = f.readline()
-        y = json.loads(f_info)
-        for fl in y:
-            MyFile(fl)
-            for k, v in y[fl].items():
-                try:
-                    if k in file_info[fl]:
-                        file_info[fl][k].set(v)
-                    else:
-                        try:
-                            file_info[fl][k] = type(v)
+        x = askopenfilename()  # open directory file dialog and select one config file
+        split_file_string = x.split('.')  # parse the file string
+        file_ext = split_file_string[1]  # extract the extension
+        if file_ext == 'cfg':  # check if the file extension matches the config file format
+            f = open(x)  # open the config file
+            f_first_line = f.readline()  # read the first line dictionary string
+            f_info = json.loads(f_first_line)  # parse the JSON string into a dict
+            y = f_info  # use short variable for loop
+            for fl in f_info:  # for each file name
+                MyFile(fl).run_cfg()  # create an instance with tk.StringVars so we can edit the loaded config
+                for k, v in y[fl].items():  # run through each subsequent key and value
+                    try:
+                        if k in file_info[fl]:  # if the key already exists then set the vakue
                             file_info[fl][k].set(v)
-                        except AttributeError:
-                            file_info[fl][k] = v
+                        else:  # if it doesnt exist then try to create the key and set the type for the key before
+                            # adding in the actual value
+                            try:
+                                file_info[fl][k] = type(v)  # set the type
+                                file_info[fl][k].set(v)  # set the value(s)
+                            except AttributeError:  # unless there is an attribute error
+                                file_info[fl][k] = v  # accept the value as is
+                    except AttributeError:  # unless there is an attribute error
+                        file_info[fl][k] = v  # accept the value as is
+
+            f_second_line = f.readline()
+            y = json.loads(f_second_line)
+            for d, v in y.items():
+                try:
+                    self.graph_settings[d].set(v)
                 except AttributeError:
-                    file_info[fl][k] = v
-        f_info = f.readline()
-        y = json.loads(f_info)
-        for d, v in y.items():
-            try:
-                self.graph_settings[d].set(v)
-            except AttributeError:
-                self.graph_settings[d] = v
+                    self.graph_settings[d] = v
+            f.close()  # close the config file
+        else:
+            tk_message_box.showerror("File error", "Please load a .cfg config file format.")
 
     def save_config(self):
         data = [('adoconf (*.cfg)', '*.cfg')]
@@ -1054,7 +1085,7 @@ class MyFrame(tk.Tk):
                     except AttributeError:
                         data_store[d] = v
             if my_data == graph_labels:
-                data_store["labels"] = graph_labels
+                data_store["labels"] = graph_labels["labels"]
             return data_store
 
         if x.name and x.name is not None:
@@ -1094,36 +1125,44 @@ class Import:
         elif len(self.filename) == 1:
             MyFile(self.filename[0]).run_all()
         else:
-            return
+            pass
 
 
 class MyFile:
     def __init__(self, file):
         self.filename = file
+        self.extension = self.filename.split('.')
+        self.ext = self.extension[1]
         self.data, self.spectra, self.x, self.y = None, None, None, None
         self.x_err, self.y_err = None, None
         self.identifier, self.length, self.name = None, None, None
 
     def run_all(self):
-        self.process_file()
-        self.file_type()
+        if self.process_file():
+            self.file_type()
+            self.file_id()
+            self.set_var()
+
+    def run_cfg(self):
         self.file_id()
         self.set_var()
 
     def process_file(self):
         # try to process if possible and check for file type
+        message = "Please use x/y data in .csv or .dat file type only."
         try:
             if not self.filename:
                 pass
-            elif self.filename.find(".csv") == -1 and self.filename.find(".dat") == -1:
-                tk_message_box.showerror("File error", "Please use x/y data in .csv or .dat file type "
-                                                       "only.")
-            elif self.filename in file_info:
-                pass
+            if self.ext == "csv" or self.ext == "dat":
+                if self.filename in file_info:
+                    pass
+                else:
+                    return True
             else:
-                self.file_type()
+                tk_message_box.showerror("File error", message)
+                return False
         except NameError:
-            return
+            pass
 
     def file_type(self):
         # process CSV file
@@ -1176,6 +1215,7 @@ class MyFile:
                     except KeyError:
                         pass
             f.close()  # close openend file
+            self.file_id()
 
     def file_id(self):
         # set file parameters
@@ -1191,10 +1231,6 @@ class MyFile:
             "x_data": self.x,
             "y_data": self.y,
             "name": self.name,
-            "x_min": min(self.x),
-            "x_max": max(self.x),
-            "y_min": min(self.y),
-            "y_max": max(self.y),
             "active": tk.StringVar(),
             "line_style": tk.StringVar(),
             "marker": tk.StringVar(),
@@ -1206,6 +1242,18 @@ class MyFile:
             "cap_size": tk.IntVar(),
             "error_color": tk.StringVar(),
         }
+        try:
+            d = file_info[self.filename]
+            d["x_min"] = min(self.x)
+            d["x_max"] = max(self.x)
+            d["y_min"] = min(self.y)
+            d["y_max"] = max(self.y)
+        except TypeError:
+            d = file_info[self.filename]
+            d["x_min"] = 0
+            d["x_max"] = 1
+            d["y_min"] = 0
+            d["y_max"] = 1
 
         default_var = {
             "error_color": "Black",
@@ -1269,7 +1317,7 @@ class NewFile(MyFile):
     def do_store(self):
         # this function grabs the strings and converts them into lists for iteration and plotting
         if not self.name:
-            return
+            pass
         else:
             # conver x/y string submitted data into x/y data lists
             erc_com = [self.x, self.y]
@@ -1282,7 +1330,6 @@ class NewFile(MyFile):
             if len(self.x) != len(self.y):
                 tk_message_box.showerror("Data entry error", "X/Y values do not have the same amount of numbers,"
                                                              " please check your entry and try again.")
-                return
             # retrieve inputted data for x/y errors
             erc_str = [self.x_err_str, self.y_err_str]
             erc_val = [self.x_err, self.y_err]
@@ -1296,13 +1343,16 @@ class NewFile(MyFile):
                     if len(val) > 1:
                         print(val)
                         if len(val) != len(comp):
-                            tk_message_box.showerror("Data entry error", "Entered  values " + str(val) + " do not have"
-                                                                         " the same amount of numbers,"
-                                                                         "please check your entry and try "
-                                                                         "again.")
-                        return
+                            tk_message_box.showerror("Data entry error",
+                                                     "Entered  values " + str(val) + " do not have the same "
+                                                                                     "amount of numbers, "
+                                                                                     "please "
+                                                                                     "check your "
+                                                                                     "entry and "
+                                                                                     "try "
+                                                                                     "again.")
                 except ValueError:
-                    return
+                    pass
             # after successfully entering the new data set, close the window and return to the overview
             # by processing this in the super class
             self.frame.destroy()
