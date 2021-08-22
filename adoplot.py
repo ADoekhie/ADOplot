@@ -11,15 +11,16 @@ from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
 import json
 
-file_info = {}
-graph_labels = {"labels": []}
+file_info = {}  # this is the main dictionary where all imported data will be stored and JSON exported capability
+graph_labels = {"labels": []}  # separate dictionary with labels list for easy JSON export
 
 
-class MyFrame(tk.Tk):
+class MyFrame(tk.Tk):  # The window frame this program runs in
 
     def __init__(self):
-        super().__init__()
+        super().__init__()  # initialise all tkinter functions
 
+        # window frame settings
         self.w = 800
         self.h = 650
         self.screen_width = self.winfo_screenwidth()
@@ -30,7 +31,7 @@ class MyFrame(tk.Tk):
         self.y_margin_pop = (self.screen_height - self.h) / 1.5
         self.my_line_colors = ['Black', 'Blue', 'Green', 'Red', 'Cyan', 'Magenta', 'Yellow', 'White']
 
-        self.graph_settings = {
+        self.graph_settings = {  # graphs settings for matplot lib
             "x_var": tk.StringVar(),
             "y_var": tk.StringVar(),
             "line_color": tk.StringVar(),
@@ -66,7 +67,7 @@ class MyFrame(tk.Tk):
             "interactive": tk.IntVar(),
         }
 
-        self.default_graph_var = {
+        self.default_graph_var = {  # default vars that can be initialised upon program start
             "x_var": 'test',
             "y_var": 'test',
             "legend_box": 0,
@@ -90,7 +91,7 @@ class MyFrame(tk.Tk):
             "interactive": 0,
         }
 
-        self.my_markers = {
+        self.my_markers = {  # marker options list
             "none": "",
             "point": ".",
             "pixel": ",",
@@ -110,7 +111,7 @@ class MyFrame(tk.Tk):
             "diamond": "D",
         }
 
-        self.grid_opt = {"sticky": tk.NSEW,
+        self.grid_opt = {"sticky": tk.NSEW,  # standard arguements for the GRID widget manager
                          "padx": 2.5,
                          "pady": 2.5,
                          "ipadx": 2.5,
@@ -125,9 +126,9 @@ class MyFrame(tk.Tk):
             "ipady": 5,
         }
 
-        self.annos = {}
+        self.annos = {}  # empty dictionary for storing annotations
 
-        self.anno_opt = {
+        self.anno_opt = {  # annotation options for placing text and arrows
             "title": tk.StringVar(),
             "x1": tk.StringVar(),
             "y1": tk.StringVar(),
@@ -135,13 +136,13 @@ class MyFrame(tk.Tk):
             "y2": tk.StringVar(),
         }
 
-        self.anno_labels = ["Annotation label",
+        self.anno_labels = ["Annotation label",  # labels for defining the variables to enter
                             "label (start) point x-axis",
                             "label (start) point y-axis",
                             "end point x-axis (use for arrow annotation)",
                             "end point y-axis (use for arrow annotation)"]
 
-        for var in self.default_graph_var:
+        for var in self.default_graph_var:  # loop over the default vars and place them in the active used dictionary
             self.graph_settings[var].set(self.default_graph_var[var])
 
         self.title('ADO plot')
@@ -149,11 +150,11 @@ class MyFrame(tk.Tk):
         self.geometry("+%d+%d" % (self.x_margin, self.y_margin))  # You want the size of the app to be 500x500
         self.resizable(0, 0)  # Don't allow resizing in the x or y direction
 
-        self.frame = tk.Frame(self)
-        self.menu()
+        self.frame = tk.Frame(self)  # start main frame
+        self.menu()  # call the top window menu
         self.frame.figure1 = None
         self.frame.over_view = tk.Frame(self.frame).grid()
-        self.tab_main = ttk.Notebook(self.frame.over_view)
+        self.tab_main = ttk.Notebook(self.frame.over_view)  # initialise the Notebook
         self.tab_data = ttk.Frame(self.tab_main)
         self.tab_graph = ttk.Frame(self.tab_main)
         self.tab_main.add(self.tab_data, text='Data')
@@ -204,19 +205,19 @@ class MyFrame(tk.Tk):
         ttk.Entry(self.tab_graph_rs, textvariable=self.graph["y_var"], width=10).grid(
             row=2, column=2, **self.grid_frame_opt)
 
-    def my_file_header(self):
+    def my_file_header(self):  # Header row for loaded files
         ttk.Label(self.tab_data_rs, text="#").grid(row=1, column=1, padx=5, pady=5)
         ttk.Label(self.tab_data_rs, text="File:").grid(row=1, column=2, padx=5, pady=5)
         ttk.Label(self.tab_data_rs, text="Properties:").grid(row=1, column=3, padx=5, pady=5)
 
-    def del_all(self):
+    def del_all(self):  # delete all data function
         file_info.clear()
         for widgets in self.tab_data_rs.winfo_children():
             widgets.destroy()
         self.my_file_header()
         self.list_my_dataset()
 
-    def list_my_dataset(self):
+    def list_my_dataset(self):  # list all data files loaded into the main dictionary
         if not file_info:
             pass
         elif len(file_info) == 0:
@@ -224,7 +225,7 @@ class MyFrame(tk.Tk):
         else:
             self.my_file_header()
 
-            def place_buttons(my_file, b):
+            def place_buttons(my_file, b):  # create the buttons that can set, edit and view data
                 plc = self.tab_data_rs
                 d = my_file
                 cms = [self.my_properties, self.show_data, self.relist_my_dataset]
@@ -242,14 +243,14 @@ class MyFrame(tk.Tk):
                 ab += 1
         self.after(50)
 
-    def relist_my_dataset(self, file):
+    def relist_my_dataset(self, file):  # remove a file from the main dictionary and loop again to refersh file list
         file_info.pop(file)
         for widgets in self.tab_data_rs.winfo_children():
             widgets.destroy()
         self.my_file_header()
         self.list_my_dataset()
 
-    def x_auto(self):
+    def x_auto(self):  # This function autmatically sets the x/y limits based on the fractions chosen
         if not file_info:
             tk_message_box.showerror("Error", "Please load a data file")
             pass
@@ -273,13 +274,13 @@ class MyFrame(tk.Tk):
                 else:
                     pass
 
-    @staticmethod
+    @staticmethod  # static tkinter button that can be called
     def my_button(loc, text, y, cm):
         _ = ttk.Button(master=loc, text=text, command=cm)
         _.grid(row=y, column=1, ipadx=2, ipady=2, padx=5, pady=5, sticky="nsew")
         return _
 
-    def menu(self):
+    def menu(self):  # Top window menu call function
         # Declare Menu
         self.frame.menu_bar = Menu(self.frame)
 
@@ -303,7 +304,7 @@ class MyFrame(tk.Tk):
         self.config(menu=self.frame.menu_bar)
         self.frame.grid()
 
-    def call_ado_plot(self, title):
+    def call_ado_plot(self, title):  # Standard toplevel window function for other functions to use
         # open new window
         self.frame.window = tk.Toplevel(ado_plot)
         self.frame.window.geometry("+%d+%d" % (self.x_margin_pop, self.y_margin_pop))
@@ -586,8 +587,6 @@ class MyFrame(tk.Tk):
             _ = ttk.Entry(my_leg, textvariable=data["legend"])
             set_grid(a, 2)
             a += 1
-        # _ = ttk.Button(self.frame.window, text="Set", command=lambda: set_vars())
-        # set_grid(a, 1)
         _ = ttk.Checkbutton(my_leg, text="Box On", onvalue=1, offvalue=0,
                             variable=self.graph_settings["legend_box"])
         set_grid(a, 1)
@@ -1056,6 +1055,7 @@ class MyFrame(tk.Tk):
     def save_config(self):
         data = [('adoconf (*.cfg)', '*.cfg')]
         x = asksaveasfile(filetypes=data, defaultextension=data)
+        # several types of data formats to compare before processing in JSON
         n64 = np.int64(64)
         n32 = np.int64(32)
         nda = np.ndarray([1, 2, 4], dtype=np.int64)
@@ -1063,6 +1063,7 @@ class MyFrame(tk.Tk):
         test2 = [1, 2, 3]
         test3 = tk.IntVar()
 
+        # convert dictionary stringvar data into JSON compatible format
         def dict_json(my_data):
             data_store = {}
             if my_data == file_info:
@@ -1088,6 +1089,7 @@ class MyFrame(tk.Tk):
                 data_store["labels"] = graph_labels["labels"]
             return data_store
 
+        # Store data in a .cfg file based on the list variables processed using the dict_json function
         if x.name and x.name is not None:
             f = open(x.name, "w")
             to_save = [file_info, self.graph_settings, graph_labels, self.annos]
@@ -1102,7 +1104,7 @@ class MyFrame(tk.Tk):
     @staticmethod
     def my_about():
         tk_message_box.showinfo("About",
-                                "This program was made by A. Doekhie. Use is purely intended for academic purposes.")
+                                "This program was made by Dr A. Doekhie. Use is purely intended for academic purposes.")
 
     @staticmethod
     def help():
