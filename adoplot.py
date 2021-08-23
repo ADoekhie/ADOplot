@@ -53,6 +53,7 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
             "right_spine_line_width": tk.StringVar(),
             "legend_pos": tk.StringVar(),
             "legend_box": tk.IntVar(),
+            "show_legend": tk.BooleanVar(),
             "figure_height": tk.IntVar(),
             "figure_width": tk.IntVar(),
             "x_scale": tk.StringVar(),
@@ -90,6 +91,7 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
             "y_tick_size": 10,
             "interactive": 0,
             "legend_pos": 'best',
+            "show_legend": True,
         }
 
         self.my_markers = {  # marker options list
@@ -572,7 +574,7 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
     def my_legend(self):
         # open window
         self.frame.window, self.frame.frame = self.call_ado_plot("Add data labels")
-
+        grid_opt = {"sticky": "w", "padx": 5, "pady": 5}
         legend_loc = ['best', 'upper right',
                       'upper left',
                       'lower left',
@@ -584,9 +586,6 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
                       'upper center',
                       'center']
 
-        def set_grid(gr, gc, s="nsew"):
-            _.grid(sticky=s, row=gr, column=gc, padx=5, pady=5, ipadx=5, ipady=5)
-
         my_leg = ttk.LabelFrame(self.frame.window, text="Legend Labels")
         my_leg.grid(row=1, column=1, sticky="nsew", padx=5, pady=5)
 
@@ -594,27 +593,25 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
         a = 1
         for item in file_info:
             data = file_info[item]
-            _ = ttk.Label(my_leg, text=data["name"])
-            set_grid(a, 1)
-            _ = ttk.Entry(my_leg, textvariable=data["legend"])
-            set_grid(a, 2)
+            ttk.Label(my_leg, text=data["name"]).grid(row=a, column=1)
+            ttk.Entry(my_leg, textvariable=data["legend"]).grid(row=a, column=2)
             a += 1
+
+        # Another label frame to hold legend options
+        my_leg_opt = ttk.LabelFrame(self.frame.window, text="Legend Options")
+        my_leg_opt.grid(row=2, column=1, sticky="nsew", padx=5, pady=5)
         # Box on or off button
-        _ = ttk.Checkbutton(my_leg, text="Box On", onvalue=1, offvalue=0,
-                            variable=self.graph_settings["legend_box"])
-        set_grid(a, 1)
-        a += 1
+        ttk.Checkbutton(my_leg_opt, text="Box On", onvalue=1, offvalue=0,
+                        variable=self.graph_settings["legend_box"]).grid(row=1, column=1, **grid_opt)
+        ttk.Checkbutton(my_leg_opt, text="Show Legend", onvalue=True, offvalue=False,
+                        variable=self.graph_settings["show_legend"]).grid(row=2, column=1, **grid_opt)
         # Combobox legend location
-        _ = ttk.Label(my_leg, text="Set Legend Location")
-        set_grid(a, 1)
-        a += 1
-        _ = ttk.Combobox(my_leg, textvariable=self.graph_settings["legend_pos"], values=legend_loc,
-                         state="readonly",
-                         justify="left")
-        set_grid(a, 1)
+        ttk.Label(my_leg_opt, text="Set Legend Location:").grid(row=3, column=1, **grid_opt)
+        ttk.Combobox(my_leg_opt, textvariable=self.graph_settings["legend_pos"], values=legend_loc,
+                     state="readonly", justify="left").grid(row=4, column=1, **grid_opt)
         # Close window button 'OK'
-        _ = ttk.Button(self.frame.window, text="Set", command=lambda: self.frame.window.destroy())
-        set_grid(a, 1)
+        ttk.Button(self.frame.window, text="Set",
+                   command=lambda: self.frame.window.destroy()).grid(row=3, column=1, sticky="nsew", padx=5, pady=5)
 
     def my_figure_size(self):
         # open window
@@ -789,172 +786,171 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
         if not file_info.keys():
             tk.messagebox.showerror("No data loaded", "Please load a data file or select one active.")
         else:
-            pass
+            graph_labels["labels"].clear()
+            # open window
+            self.frame.window, self.frame.frame = self.call_ado_plot("Plot")
+            self.frame.frame.grid()
 
-        graph_labels["labels"].clear()
-        # open window
-        self.frame.window, self.frame.frame = self.call_ado_plot("Plot")
-        self.frame.frame.grid()
+            # Declare Menu
+            self.frame.menu_bar = Menu(self.frame.window)
 
-        # Declare Menu
-        self.frame.menu_bar = Menu(self.frame.window)
+            # File Menu
+            self.frame.file_menu = Menu(self.frame.menu_bar, tearoff=0)
+            self.frame.file_menu.add_command(label="Export", command=lambda: self.save_plot())
+            self.frame.menu_bar.add_cascade(label="File", menu=self.frame.file_menu)
+            self.frame.window.config(menu=self.frame.menu_bar)
 
-        # File Menu
-        self.frame.file_menu = Menu(self.frame.menu_bar, tearoff=0)
-        self.frame.file_menu.add_command(label="Export", command=lambda: self.save_plot())
-        self.frame.menu_bar.add_cascade(label="File", menu=self.frame.file_menu)
-        self.frame.window.config(menu=self.frame.menu_bar)
+            # create canvas
+            if self.graph_settings["interactive"].get() == 1:
+                print("code reached")
+                plt.ion()
+            self.figure1 = plt.Figure(figsize=(self.graph_settings["figure_width"].get(),
+                                               self.graph_settings["figure_height"].get()),
+                                      dpi=96, constrained_layout=False,
+                                      frameon=True, tight_layout={"rect": (0, 0, .95, .95)})
+            self.ax1 = self.figure1.add_subplot(1, 1, 1, clip_on="off")
+            self.bar1 = FigureCanvasTkAgg(self.figure1, self.frame.frame)
+            self.bar1.get_tk_widget().grid()
+            p_mode2 = self.graph_settings["plot_mode"].get()  # what type of plot is it
 
-        # create canvas
-        if self.graph_settings["interactive"].get() == 1:
-            print("code reached")
-            plt.ion()
-        self.figure1 = plt.Figure(figsize=(self.graph_settings["figure_width"].get(),
-                                           self.graph_settings["figure_height"].get()),
-                                  dpi=96, constrained_layout=False,
-                                  frameon=True, tight_layout={"rect": (0, 0, .95, .95)})
-        self.ax1 = self.figure1.add_subplot(1, 1, 1, clip_on="off")
-        self.bar1 = FigureCanvasTkAgg(self.figure1, self.frame.frame)
-        self.bar1.get_tk_widget().grid()
-        p_mode2 = self.graph_settings["plot_mode"].get()  # what type of plot is it
+            def in_plot(my_file):
+                p_mode = self.graph_settings["plot_mode"].get()  # what type of plot is it
 
-        def in_plot(my_file):
-            p_mode = self.graph_settings["plot_mode"].get()  # what type of plot is it
+                # gather all variables
+                data = file_info[my_file]
 
-            # gather all variables
-            data = file_info[my_file]
-
-            if data["active"].get() == 'yes':
-                graph_labels["labels"].append(data["legend"].get())
-                x = data["x_data"]
-                y = data["y_data"]
-                color = data["color"].get()
-                l_style = data["line_style"].get()
-                pre_m_style = data["marker"].get()
-                m_style = self.my_markers[pre_m_style]
-                plotting_mode = {
-                    "Line": {"type": self.ax1.plot,
-                             "params": {"c": color, "linestyle": l_style, "marker": m_style}},
-                    "Scatter": {"type": self.ax1.scatter,
-                                "params": {"c": color}},
-                    "X_log": {"type": self.ax1.semilogx,
-                              "params": {"c": color, "linestyle": l_style}},
-                    "Y_log": {"type": self.ax1.semilogy,
-                              "params": {"c": color, "linestyle": l_style}},
-                }
-                if p_mode != "Bar":
-                    plotting_mode[p_mode]["type"](x, y, **plotting_mode[p_mode]["params"])
-                if p_mode == "Line":
-                    if self.graph_settings["x_scale"].get() != 'reverse':
-                        self.ax1.set_xscale(self.graph_settings["x_scale"].get())
-                    if self.graph_settings["y_scale"].get() != 'reverse':
-                        self.ax1.set_yscale(self.graph_settings["y_scale"].get())
-                if p_mode == "Bar":
-                    width = 0.35
-                    if self.graph_settings["bar"].get() != 0:
-                        self.ax1.bar(x + width / 2, y, width=width, label=my_file)
-                    else:
-                        self.ax1.bar(x - width / 2, y, width=width, label=my_file)
-                        self.graph_settings["bar"].set(1)
-                if self.graph_settings["fit"].get():
-                    f_mode = self.graph_settings["fit"].get()
-                    mode = {
-                        "lin_reg": self.lin_plot,
-                        "fpl": self.fpl_plot,
-                        "f_peaks": self.f_peaks,
+                if data["active"].get() == 'yes':
+                    graph_labels["labels"].append(data["legend"].get())
+                    x = data["x_data"]
+                    y = data["y_data"]
+                    color = data["color"].get()
+                    l_style = data["line_style"].get()
+                    pre_m_style = data["marker"].get()
+                    m_style = self.my_markers[pre_m_style]
+                    plotting_mode = {
+                        "Line": {"type": self.ax1.plot,
+                                 "params": {"c": color, "linestyle": l_style, "marker": m_style}},
+                        "Scatter": {"type": self.ax1.scatter,
+                                    "params": {"c": color}},
+                        "X_log": {"type": self.ax1.semilogx,
+                                  "params": {"c": color, "linestyle": l_style}},
+                        "Y_log": {"type": self.ax1.semilogy,
+                                  "params": {"c": color, "linestyle": l_style}},
                     }
-                    mode[f_mode](my_file)
-
-                error_bar_opt = {
-                    "c": color,
-                    "ecolor": file_info[my_file]["error_color"].get(),
-                    "linestyle": "none",
-                    "capsize": data["cap_size"].get(),
-                    "marker": m_style,
-                    "barsabove": False,
-                }
-                if data["y_error_bar"].get() == 1 and data["x_error_bar"].get() == 0:
-                    y_error = data["y_error"]
-                    self.ax1.errorbar(x, y, yerr=y_error, **error_bar_opt)
-                if data["x_error_bar"].get() == 1 and data["y_error_bar"].get() == 0:
-                    x_error = data["x_error"]
-                    self.ax1.errorbar(x, y, xerr=x_error, **error_bar_opt)
-                if data["y_error_bar"].get() == 1 and data["x_error_bar"].get() == 1:
-                    y_error = data["y_error"]
-                    x_error = data["x_error"]
-                    self.ax1.errorbar(x, y, yerr=y_error, xerr=x_error, **error_bar_opt)
-                if len(self.annos) > 0:
-                    for ent in self.annos:
-                        text = self.annos[ent]["title"]
-                        xy = (float(self.annos[ent]["x1"]), float(self.annos[ent]["y1"]))
-                        try:
-                            xytext = (float(self.annos[ent]["x2"]), float(self.annos[ent]["y2"]))
-                        except ValueError:
-                            xytext = 0
-                            pass
-                        if xytext != 0:
-                            self.ax1.annotate(text=text, xy=xy, xytext=xytext, arrowprops={'arrowstyle': '->'})
+                    if p_mode != "Bar":
+                        plotting_mode[p_mode]["type"](x, y, **plotting_mode[p_mode]["params"])
+                    if p_mode == "Line":
+                        if self.graph_settings["x_scale"].get() != 'reverse':
+                            self.ax1.set_xscale(self.graph_settings["x_scale"].get())
+                        if self.graph_settings["y_scale"].get() != 'reverse':
+                            self.ax1.set_yscale(self.graph_settings["y_scale"].get())
+                    if p_mode == "Bar":
+                        width = 0.35
+                        if self.graph_settings["bar"].get() != 0:
+                            self.ax1.bar(x + width / 2, y, width=width, label=my_file)
                         else:
-                            self.ax1.annotate(text=text, xy=xy)
+                            self.ax1.bar(x - width / 2, y, width=width, label=my_file)
+                            self.graph_settings["bar"].set(1)
+                    if self.graph_settings["fit"].get():
+                        f_mode = self.graph_settings["fit"].get()
+                        mode = {
+                            "lin_reg": self.lin_plot,
+                            "fpl": self.fpl_plot,
+                            "f_peaks": self.f_peaks,
+                        }
+                        mode[f_mode](my_file)
+
+                    error_bar_opt = {
+                        "c": color,
+                        "ecolor": file_info[my_file]["error_color"].get(),
+                        "linestyle": "none",
+                        "capsize": data["cap_size"].get(),
+                        "marker": m_style,
+                        "barsabove": False,
+                    }
+                    if data["y_error_bar"].get() == 1 and data["x_error_bar"].get() == 0:
+                        y_error = data["y_error"]
+                        self.ax1.errorbar(x, y, yerr=y_error, **error_bar_opt)
+                    if data["x_error_bar"].get() == 1 and data["y_error_bar"].get() == 0:
+                        x_error = data["x_error"]
+                        self.ax1.errorbar(x, y, xerr=x_error, **error_bar_opt)
+                    if data["y_error_bar"].get() == 1 and data["x_error_bar"].get() == 1:
+                        y_error = data["y_error"]
+                        x_error = data["x_error"]
+                        self.ax1.errorbar(x, y, yerr=y_error, xerr=x_error, **error_bar_opt)
+                    if len(self.annos) > 0:
+                        for ent in self.annos:
+                            text = self.annos[ent]["title"]
+                            xy = (float(self.annos[ent]["x1"]), float(self.annos[ent]["y1"]))
+                            try:
+                                xytext = (float(self.annos[ent]["x2"]), float(self.annos[ent]["y2"]))
+                            except ValueError:
+                                xytext = 0
+                                pass
+                            if xytext != 0:
+                                self.ax1.annotate(text=text, xy=xy, xytext=xytext, arrowprops={'arrowstyle': '->'})
+                            else:
+                                self.ax1.annotate(text=text, xy=xy)
+                else:
+                    pass
+
+            for my_file1 in file_info:
+                in_plot(my_file1)
+
+            my_spine_dict = {
+                "top": {"color": self.graph_settings["top_spine_color"].get(),
+                        "line_w": float(self.graph_settings["top_spine_line_width"].get())},
+                "right": {"color": self.graph_settings["right_spine_color"].get(),
+                          "line_w": float(self.graph_settings["right_spine_line_width"].get())},
+                "left": {"color": self.graph_settings["y_axis_spine_color"].get(),
+                         "line_w": float(self.graph_settings["y_axis_spine_line_width"].get())},
+                "bottom": {"color": self.graph_settings["x_axis_spine_color"].get(),
+                           "line_w": float(self.graph_settings["x_axis_spine_line_width"].get())},
+            }
+
+            for pos in my_spine_dict:
+                self.ax1.spines[pos].set_linewidth(my_spine_dict[pos]["line_w"])
+                self.ax1.spines[pos].set_color(my_spine_dict[pos]["color"])
+
+            if p_mode2 != "Bar":
+                if not self.graph_settings["x_min_var"].get():
+                    self.x_auto()
+                else:
+                    pass
+
+                x_lim_min = float(self.graph_settings["x_min_var"].get())
+                y_lim_min = float(self.graph_settings["y_min_var"].get())
+                x_lim_max = float(self.graph_settings["x_max_var"].get())
+                y_lim_max = float(self.graph_settings["y_max_var"].get())
+
+                if self.graph_settings["y_scale"].get() == 'reverse':
+                    self.ax1.set_ylim(y_lim_max, y_lim_min)
+                elif self.graph_settings["y_scale"].get() == "log":
+                    self.ax1.set_ylim(abs(y_lim_min), abs(y_lim_max))
+                else:
+                    self.ax1.set_ylim(y_lim_min, y_lim_max)
+
+                if self.graph_settings["x_scale"].get() == 'reverse':
+                    self.ax1.set_xlim(x_lim_max, x_lim_min)
+                elif self.graph_settings["x_scale"].get() == "log":
+                    self.ax1.set_xlim(abs(x_lim_min), abs(x_lim_max))
+                else:
+                    self.ax1.set_xlim(x_lim_min, x_lim_max)
+
+            x_label_font = self.graph_settings["x_label_font"].get()
+            y_label_font = self.graph_settings["y_label_font"].get()
+            if not self.graph_settings["legend_pos"].get():
+                l_pos = 'best'
             else:
-                pass
-
-        for my_file1 in file_info:
-            in_plot(my_file1)
-
-        my_spine_dict = {
-            "top": {"color": self.graph_settings["top_spine_color"].get(),
-                    "line_w": float(self.graph_settings["top_spine_line_width"].get())},
-            "right": {"color": self.graph_settings["right_spine_color"].get(),
-                      "line_w": float(self.graph_settings["right_spine_line_width"].get())},
-            "left": {"color": self.graph_settings["y_axis_spine_color"].get(),
-                     "line_w": float(self.graph_settings["y_axis_spine_line_width"].get())},
-            "bottom": {"color": self.graph_settings["x_axis_spine_color"].get(),
-                       "line_w": float(self.graph_settings["x_axis_spine_line_width"].get())},
-        }
-
-        for pos in my_spine_dict:
-            self.ax1.spines[pos].set_linewidth(my_spine_dict[pos]["line_w"])
-            self.ax1.spines[pos].set_color(my_spine_dict[pos]["color"])
-
-        if p_mode2 != "Bar":
-            if not self.graph_settings["x_min_var"].get():
-                self.x_auto()
-            else:
-                pass
-
-            x_lim_min = float(self.graph_settings["x_min_var"].get())
-            y_lim_min = float(self.graph_settings["y_min_var"].get())
-            x_lim_max = float(self.graph_settings["x_max_var"].get())
-            y_lim_max = float(self.graph_settings["y_max_var"].get())
-
-            if self.graph_settings["y_scale"].get() == 'reverse':
-                self.ax1.set_ylim(y_lim_max, y_lim_min)
-            elif self.graph_settings["y_scale"].get() == "log":
-                self.ax1.set_ylim(abs(y_lim_min), abs(y_lim_max))
-            else:
-                self.ax1.set_ylim(y_lim_min, y_lim_max)
-
-            if self.graph_settings["x_scale"].get() == 'reverse':
-                self.ax1.set_xlim(x_lim_max, x_lim_min)
-            elif self.graph_settings["x_scale"].get() == "log":
-                self.ax1.set_xlim(abs(x_lim_min), abs(x_lim_max))
-            else:
-                self.ax1.set_xlim(x_lim_min, x_lim_max)
-
-        x_label_font = self.graph_settings["x_label_font"].get()
-        y_label_font = self.graph_settings["y_label_font"].get()
-        if not self.graph_settings["legend_pos"].get():
-            l_pos = 'best'
-        else:
-            l_pos = self.graph_settings["legend_pos"].get()
-        self.ax1.legend(graph_labels["labels"], frameon=False, loc=l_pos)
-        self.ax1.set_xlabel(self.graph_settings["x_var"].get(), fontsize=x_label_font)
-        self.ax1.set_ylabel(self.graph_settings["y_var"].get(), fontsize=y_label_font)
-        self.ax1.minorticks_on()
-        self.ax1.tick_params(axis="x", labelsize=self.graph_settings["x_tick_size"].get())
-        self.ax1.tick_params(axis="y", labelsize=self.graph_settings["y_tick_size"].get())
-        self.graph_settings["bar"].set(0)
+                l_pos = self.graph_settings["legend_pos"].get()
+            if self.graph_settings["show_legend"].get():
+                self.ax1.legend(graph_labels["labels"], frameon=False, loc=l_pos)
+            self.ax1.set_xlabel(self.graph_settings["x_var"].get(), fontsize=x_label_font)
+            self.ax1.set_ylabel(self.graph_settings["y_var"].get(), fontsize=y_label_font)
+            self.ax1.minorticks_on()
+            self.ax1.tick_params(axis="x", labelsize=self.graph_settings["x_tick_size"].get())
+            self.ax1.tick_params(axis="y", labelsize=self.graph_settings["y_tick_size"].get())
+            self.graph_settings["bar"].set(0)
 
     def lin_plot(self, info):
         def func(a, x, b):
@@ -1160,8 +1156,9 @@ class Import:
 class MyFile:
     def __init__(self, file):
         self.filename = file
-        self.extension = self.filename.split('.')
-        self.ext = self.extension[1]
+        if self.filename is not None:
+            self.extension = self.filename.split('.')
+            self.ext = self.extension[1]
         self.data, self.spectra, self.x, self.y = None, None, None, None
         self.x_err, self.y_err = None, None
         self.identifier, self.length, self.name = None, None, None
@@ -1196,7 +1193,19 @@ class MyFile:
     def file_type(self):
         # process CSV file
         if self.filename.find(".csv") > 0:
-            self.data = pd.read_csv(self.filename, sep=',')
+            f = open(self.filename, "r")
+            f_first = f.readline()
+            alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p',
+                        'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
+            header = None
+            for letter in alphabet:
+                if f_first.find(letter) > 0:
+                    header = 0
+                    print("found letter!")
+                    break
+                else:
+                    header = None
+            self.data = pd.read_csv(self.filename, sep=',', header=header)
             self.spectra = self.data.values
             self.x = self.spectra[:, 0]
             self.y = self.spectra[:, 1]
@@ -1277,7 +1286,7 @@ class MyFile:
             d["x_max"] = max(self.x)
             d["y_min"] = min(self.y)
             d["y_max"] = max(self.y)
-        except TypeError:
+        except TypeError or ValueError:
             d = file_info[self.filename]
             d["x_min"] = 0
             d["x_max"] = 1
@@ -1303,6 +1312,10 @@ class NewFile(MyFile):
 
     def __init__(self):
         super().__init__(None)
+        self.x = []
+        self.y = []
+        self.y_err = []
+        self.x_err = []
         self.x_str = tk.StringVar()
         self.y_str = tk.StringVar()
         self.name = tk.StringVar()
@@ -1348,13 +1361,13 @@ class NewFile(MyFile):
         if not self.name:
             pass
         else:
-            # conver x/y string submitted data into x/y data lists
-            erc_com = [self.x, self.y]
-            erc_com_str = [self.x_str, self.y_str]
-            for dstr, ddata in zip(erc_com, erc_com_str):
-                t_split = str(ddata)
-                f = t_split.split(",")
-                erc_com = [float(ele) for ele in f]
+            # convert x/y string submitted data into x/y data lists
+            d_list = [self.x, self.y]
+            d_str_list = [self.x_str, self.y_str]
+            for d_str, d_data in zip(d_list, d_str_list):
+                f = [float(ele) for ele in str(d_data.get()).split(",")]
+                for vl in f:
+                    d_str.append(vl)
             # then check if x and y are same length
             if len(self.x) != len(self.y):
                 tk_message_box.showerror("Data entry error", "X/Y values do not have the same amount of numbers,"
@@ -1362,15 +1375,15 @@ class NewFile(MyFile):
             # retrieve inputted data for x/y errors
             erc_str = [self.x_err_str, self.y_err_str]
             erc_val = [self.x_err, self.y_err]
-            for check, val, comp in zip(erc_str, erc_val, erc_com):
+            for check, val, comp in zip(erc_str, erc_val, d_list):
                 try:
-                    err_split = str(check.get())
-                    err_f = err_split.split(",")
-                    val = ([float(ele) for ele in err_f])
+                    f = [float(ele) for ele in str(check.get()).split(",")]
+                    for vl in f:
+                        val.append(vl)
                     # check if there are any variables and if so compare to the length of x/y
                     # to make sure they're the same
                     if len(val) > 1:
-                        print(val)
+                        # print(val)
                         if len(val) != len(comp):
                             tk_message_box.showerror("Data entry error",
                                                      "Entered  values " + str(val) + " do not have the same "
