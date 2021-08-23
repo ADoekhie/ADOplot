@@ -295,9 +295,9 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
 
         # Data Menu
         self.frame.data_menu = Menu(self.frame.menu_bar, tearoff=0)
-        self.frame.data_menu.add_command(label="Save Config", command=self.save_config)
-        self.frame.data_menu.add_command(label="Load Config", command=self.load_config)
-        self.frame.menu_bar.add_cascade(label="Config", menu=self.frame.data_menu)
+        self.frame.data_menu.add_command(label="Save Project", command=self.save_config)
+        self.frame.data_menu.add_command(label="Load Project", command=self.load_config)
+        self.frame.menu_bar.add_cascade(label="Save/Load", menu=self.frame.data_menu)
 
         # Help menu
         self.frame.help_menu = Menu(self.frame.menu_bar, tearoff=0)
@@ -1132,13 +1132,13 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
     @staticmethod
     def help():
         tk_message_box.showinfo("Help",
-                                "Load a or multiple .csv files containing purely one set of x and y data. "
-                                "Optionally you can added y or x error bar data "
-                                "in a third or fourth column respectively"
-                                "In the data tab you can set their visual properties like color and linestyle. "
-                                "In the graph tab you can plot the data and optimise the plot format. "
-                                "Advanced fitting options are present for use but limited at this stage. "
-                                "Please request more functionality on the GitHub page.")
+                                "Load one or multiple .csv/.dat files containing purely one set of x and y data.\n\n"
+                                "Optionally you can added y or x error bar data"
+                                "in a third or fourth column respectively.\n\n"
+                                "In the data tab you can set their visual properties like color and line style.\n\n"
+                                "In the graph tab you can plot the data and optimise the plot format.\n\n"
+                                "Advanced fitting options are present for use but limited at this stage.\n\n"
+                                "Please request more functionality on the GitHub page.\n")
 
 
 class Import:
