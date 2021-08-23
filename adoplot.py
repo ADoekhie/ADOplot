@@ -89,6 +89,7 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
             "x_tick_size": 10,
             "y_tick_size": 10,
             "interactive": 0,
+            "legend_pos": 'best',
         }
 
         self.my_markers = {  # marker options list
@@ -572,6 +573,17 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
         # open window
         self.frame.window, self.frame.frame = self.call_ado_plot("Add data labels")
 
+        legend_loc = ['best', 'upper right',
+                      'upper left',
+                      'lower left',
+                      'lower right',
+                      'right',
+                      'center left',
+                      'center right',
+                      'lower center',
+                      'upper center',
+                      'center']
+
         def set_grid(gr, gc, s="nsew"):
             _.grid(sticky=s, row=gr, column=gc, padx=5, pady=5, ipadx=5, ipady=5)
 
@@ -587,9 +599,20 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
             _ = ttk.Entry(my_leg, textvariable=data["legend"])
             set_grid(a, 2)
             a += 1
+        # Box on or off button
         _ = ttk.Checkbutton(my_leg, text="Box On", onvalue=1, offvalue=0,
                             variable=self.graph_settings["legend_box"])
         set_grid(a, 1)
+        a += 1
+        # Combobox legend location
+        _ = ttk.Label(my_leg, text="Set Legend Location")
+        set_grid(a, 1)
+        a += 1
+        _ = ttk.Combobox(my_leg, textvariable=self.graph_settings["legend_pos"], values=legend_loc,
+                         state="readonly",
+                         justify="left")
+        set_grid(a, 1)
+        # Close window button 'OK'
         _ = ttk.Button(self.frame.window, text="Set", command=lambda: self.frame.window.destroy())
         set_grid(a, 1)
 
@@ -921,7 +944,11 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
 
         x_label_font = self.graph_settings["x_label_font"].get()
         y_label_font = self.graph_settings["y_label_font"].get()
-        self.ax1.legend(graph_labels["labels"], frameon=False, loc="best")
+        if not self.graph_settings["legend_pos"].get():
+            l_pos = 'best'
+        else:
+            l_pos = self.graph_settings["legend_pos"].get()
+        self.ax1.legend(graph_labels["labels"], frameon=False, loc=l_pos)
         self.ax1.set_xlabel(self.graph_settings["x_var"].get(), fontsize=x_label_font)
         self.ax1.set_ylabel(self.graph_settings["y_var"].get(), fontsize=y_label_font)
         self.ax1.minorticks_on()
