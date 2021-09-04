@@ -1,3 +1,4 @@
+# import math
 import tkinter as tk
 from tkinter import ttk
 import numpy as np
@@ -52,7 +53,7 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
             "top_spine_line_width": tk.StringVar(),
             "right_spine_line_width": tk.StringVar(),
             "legend_pos": tk.StringVar(),
-            "legend_box": tk.IntVar(),
+            "legend_box": tk.BooleanVar(),
             "show_legend": tk.BooleanVar(),
             "figure_height": tk.IntVar(),
             "figure_width": tk.IntVar(),
@@ -71,7 +72,7 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
         self.default_graph_var = {  # default vars that can be initialised upon program start
             "x_var": 'test',
             "y_var": 'test',
-            "legend_box": 0,
+            "legend_box": False,
             "figure_height": 6,
             "figure_width": 8,
             "x_scale": "linear",
@@ -92,6 +93,7 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
             "interactive": 0,
             "legend_pos": 'best',
             "show_legend": True,
+            "fit_color": 'k',
         }
 
         self.my_markers = {  # marker options list
@@ -121,12 +123,12 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
                          "ipady": 2.5,
                          }
 
+        self.grid_pad = {"padx": 5, "pady": 5}
+
         self.grid_frame_opt = {
             "sticky": tk.NSEW,
             "padx": 5,
-            "pady": 5,
-            "ipadx": 5,
-            "ipady": 5,
+            "pady": 5
         }
 
         self.annos = {}  # empty dictionary for storing annotations
@@ -175,9 +177,9 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
         self.tab_graph_ls = ttk.LabelFrame(self.tab_graph, text='Options')
         self.tab_graph_ls.grid(row=1, column=1, **self.grid_frame_opt)
         self.tab_graph_rs = ttk.LabelFrame(self.tab_graph, text='Graph Labels')
-        self.tab_graph_rs.grid(row=1, column=2, **self.grid_frame_opt)
+        self.tab_graph_rs.grid(row=1, column=2, columnspan=2, **self.grid_frame_opt)
         self.tab_graph_rs1 = ttk.LabelFrame(self.tab_graph, text='Advanced')
-        self.tab_graph_rs1.grid(row=1, column=3, **self.grid_frame_opt)
+        self.tab_graph_rs1.grid(row=1, column=5, **self.grid_frame_opt)
 
         self.my_tabs()
         self.my_file_header()
@@ -201,17 +203,21 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
         self.frame.b8b = self.my_button(loc=self.tab_graph_rs1, text="Edit Figure", cm=lambda: self.edit_picture(), y=5)
 
         # label entries for graph
-        ttk.Label(self.tab_graph_rs, text="X-Label:").grid(row=1, column=1, **self.grid_frame_opt)
+        ttk.Label(self.tab_graph_rs, text=" \t ", width=2).grid(row=1, column=1, **self.grid_frame_opt)
+        ttk.Label(self.tab_graph_rs, text="X-Label:").grid(row=1, column=2, **self.grid_frame_opt)
         ttk.Entry(self.tab_graph_rs, textvariable=self.graph["x_var"]).grid(
-            row=1, column=2, **self.grid_frame_opt)
-        ttk.Label(self.tab_graph_rs, text="Y-Label:").grid(row=2, column=1, **self.grid_frame_opt)
-        ttk.Entry(self.tab_graph_rs, textvariable=self.graph["y_var"], width=10).grid(
-            row=2, column=2, **self.grid_frame_opt)
+            row=1, column=3, columnspan=2, **self.grid_frame_opt)
+        ttk.Label(self.tab_graph_rs, text="Y-Label:").grid(row=2, column=2, **self.grid_frame_opt)
+        ttk.Entry(self.tab_graph_rs, textvariable=self.graph["y_var"], width=12).grid(
+            row=2, column=3, columnspan=2, **self.grid_frame_opt)
+        ttk.Label(self.tab_graph_rs, text=" \t ", width=2).grid(row=1, column=5, **self.grid_frame_opt)
 
     def my_file_header(self):  # Header row for loaded files
-        ttk.Label(self.tab_data_rs, text="#").grid(row=1, column=1, padx=5, pady=5)
-        ttk.Label(self.tab_data_rs, text="File:").grid(row=1, column=2, padx=5, pady=5)
-        ttk.Label(self.tab_data_rs, text="Properties:").grid(row=1, column=3, padx=5, pady=5)
+        ttk.Label(self.tab_data_rs, text="#", width=3).grid(row=1, column=1, **self.grid_pad)
+        ttk.Label(self.tab_data_rs, text="File:", width=10).grid(row=1, column=2, **self.grid_pad)
+        ttk.Label(self.tab_data_rs, text="Properties:", width=13).grid(row=1, column=3, **self.grid_pad)
+        ttk.Label(self.tab_data_rs, text=" \t ", width=13).grid(row=1, column=4, pady=5)
+        ttk.Label(self.tab_data_rs, text=" \t ", width=13).grid(row=1, column=5, pady=5)
 
     def del_all(self):  # delete all data function
         file_info.clear()
@@ -235,7 +241,7 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
                 grid_opt = {"padx": 5, "pady": 5}
                 ttk.Checkbutton(plc, offvalue="no", onvalue="yes", variable=file_info[d]["active"],
                                 state=NORMAL).grid(row=b, column=1, **grid_opt)
-                ttk.Label(plc, text=file_info[my_file]["name"]).grid(row=b, column=2, **grid_opt)
+                ttk.Label(plc, text=file_info[my_file]["name"]).grid(row=b, column=2, sticky="w", **grid_opt)
                 ttk.Button(plc, text="Set Properties", command=lambda: cms[0](d)).grid(row=b, column=3, **grid_opt)
                 ttk.Button(plc, text="View Data", command=lambda: cms[1](d)).grid(row=b, column=4, **grid_opt)
                 ttk.Button(plc, text="Delete", command=lambda: cms[2](d)).grid(row=b, column=5, **grid_opt)
@@ -277,10 +283,9 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
                 else:
                     pass
 
-    @staticmethod  # static tkinter button that can be called
-    def my_button(loc, text, y, cm):
+    def my_button(self, loc, text, y, cm):
         _ = ttk.Button(master=loc, text=text, command=cm)
-        _.grid(row=y, column=1, ipadx=2, ipady=2, padx=5, pady=5, sticky="nsew")
+        _.grid(row=y, column=1, ipadx=2, ipady=2, **self.grid_pad, sticky="nsew")
         return _
 
     def menu(self):  # Top window menu call function
@@ -362,48 +367,27 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
     def graph_type(self):
         # open window
         self.frame.window, self.frame.frame = self.call_ado_plot("Set graph type")
-
-        def set_grid(gr, gc):
-            _.grid(sticky="nsew", row=gr, column=gc, padx=5, pady=2.5)
-
-        gtype = ttk.LabelFrame(self.frame.window, text="Graph Type")
-        gtype.grid(row=1, column=1, sticky="nsew", padx=5, pady=2.5)
-
-        gtype2 = ttk.LabelFrame(self.frame.window, text="Scale Type X")
-        gtype2.grid(row=1, column=2, sticky="nsew", padx=5, pady=2.5)
-
-        gtype3 = ttk.LabelFrame(self.frame.window, text="Scale Type Y")
-        gtype3.grid(row=1, column=3, sticky="nsew", padx=5, pady=2.5)
+        graph_type_grid_opt = {"sticky": "nsew", "row": 1, "padx": 5, "pady": 2.5}
+        graph_type_grid_opt_but = {"sticky": "nsew", "padx": 5, "pady": 2.5}
+        graph_type_list = ["Graph Type", "Scale Type X", "Scale Type Y"]
 
         # check buttons for graph type
         graph_type = ['Line', 'Scatter', 'Bar', 'X_log', 'Y_log']
         scale_type = ['linear', 'log', 'symlog', 'logit', 'reverse']
+        type_list = [graph_type, scale_type, scale_type]
+        graph_type_var = [self.graph_settings["plot_mode"],
+                          self.graph_settings["x_scale"],
+                          self.graph_settings["y_scale"]]
 
-        _ = ttk.Combobox(gtype,
-                         state="readonly",
-                         values=graph_type,
-                         justify="left",
-                         textvariable=self.graph_settings["plot_mode"],
-                         width=10)
-        set_grid(1, 1)
+        for gtype, col, tl, gtv in zip(graph_type_list, range(1, 4, 1), type_list, graph_type_var):
+            gt = ttk.LabelFrame(self.frame.window, text=gtype)
+            gt.grid(column=col, **graph_type_grid_opt)
+            ttk.Combobox(gt, state="readonly", values=tl,
+                         justify="left", textvariable=gtv,
+                         width=10).grid(column=col, **graph_type_grid_opt)
 
-        _ = ttk.Combobox(gtype2,
-                         state="readonly",
-                         values=scale_type,
-                         justify="left",
-                         textvariable=self.graph_settings["x_scale"],
-                         width=10)
-        set_grid(1, 1)
-        _ = ttk.Combobox(gtype3,
-                         state="readonly",
-                         values=scale_type,
-                         justify="left",
-                         textvariable=self.graph_settings["y_scale"],
-                         width=10)
-        set_grid(1, 1)
-
-        _ = ttk.Button(self.frame.window, text="OK", command=lambda: self.frame.window.destroy())
-        set_grid(2, 1)
+        ttk.Button(self.frame.window, text="OK",
+                   command=lambda: self.frame.window.destroy()).grid(row=2, column=1, **graph_type_grid_opt_but)
 
     def my_font(self):
         # open new window
@@ -430,7 +414,7 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
 
         # close window
         ttk.Button(self.frame.window, text="OK", command=lambda: self.frame.window.destroy()).grid(
-            row=a, column=1, columnspan=2)
+            row=a, column=1, columnspan=2, sticky="nsew", **self.grid_pad)
 
     def my_properties(self, my_file):
         # open window
@@ -535,9 +519,8 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
     def my_fit(self):
         # open window
         self.frame.window, self.frame.frame = self.call_ado_plot("Choose fit")
-
-        def set_grid(gr, gc, s="nsew"):
-            _.grid(sticky=s, row=gr, column=gc, padx=5, pady=2.5)
+        my_fit_grid_opt_but = {"sticky": "nsew", "padx": 5, "pady": 2.5}
+        my_fit_grid_opt_lab = {"sticky": "w", "padx": 5, "pady": 2.5}
 
         my_fit_window = ttk.LabelFrame(self.frame.window, text="Choose fit")
         my_fit_window.grid(row=1, column=1, stick="nsew", padx=5, pady=2.5)
@@ -546,35 +529,26 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
         my_fits = {
             1: {"name": "Linear Regression", "var": "lin_reg"},
             2: {"name": "Four Parameter Logistic", "var": "fpl"},
-            3: {"name": "Find Peaks", "var": "f_peaks"}
+            3: {"name": "Find Peaks", "var": "f_peaks"},
+            4: {"name": "UV Thermal", "var": "uv_gibbs"}
         }
-        a = 1
+
         for fits in my_fits:
-            _ = ttk.Checkbutton(my_fit_window, text=my_fits[fits]["name"], onvalue=my_fits[fits]["var"], offvalue="",
-                                variable=self.graph_settings["fit"])
-            set_grid(a, 1)
-            a += 1
+            ttk.Checkbutton(my_fit_window, text=my_fits[fits]["name"], onvalue=my_fits[fits]["var"], offvalue="",
+                            variable=self.graph_settings["fit"]).grid(column=1, **my_fit_grid_opt_but)
 
-        _ = tk.Label(self.frame.window, text="Fit Color")
-        set_grid(a, 1, s=tk.W)
-        a += 1
+        ttk.Label(self.frame.window, text="Fit Color").grid(column=1, **my_fit_grid_opt_lab)
         # fit line colors
-
-        _ = ttk.Combobox(self.frame.window,
-                         state="readonly",
-                         values=self.my_line_colors,
-                         justify="left",
-                         textvariable=self.graph_settings["fit_color"],
-                         width=10)
-        set_grid(a, 1)
-        a += 1
-        _ = ttk.Button(self.frame.window, text="Set", command=lambda: self.frame.window.destroy())
-        set_grid(a, 1)
+        ttk.Combobox(self.frame.window, state="readonly", values=self.my_line_colors, justify="left",
+                     textvariable=self.graph_settings["fit_color"], width=10).grid(column=1, **my_fit_grid_opt_but)
+        ttk.Button(self.frame.window, text="Set",
+                   command=lambda: self.frame.window.destroy()).grid(column=1, **my_fit_grid_opt_but)
 
     def my_legend(self):
         # open window
         self.frame.window, self.frame.frame = self.call_ado_plot("Add data labels")
-        grid_opt = {"sticky": "w", "padx": 5, "pady": 5}
+        grid_opt_but = {"sticky": "nsew", "padx": 5, "pady": 5}
+        grid_opt_lab = {"sticky": "w", "padx": 5, "pady": 5}
         legend_loc = ['best', 'upper right',
                       'upper left',
                       'lower left',
@@ -587,7 +561,7 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
                       'center']
 
         my_leg = ttk.LabelFrame(self.frame.window, text="Legend Labels")
-        my_leg.grid(row=1, column=1, sticky="nsew", padx=5, pady=5)
+        my_leg.grid(row=1, column=1, sticky="nsew", **self.grid_pad)
 
         # set new frame in window
         a = 1
@@ -599,29 +573,29 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
 
         # Another label frame to hold legend options
         my_leg_opt = ttk.LabelFrame(self.frame.window, text="Legend Options")
-        my_leg_opt.grid(row=2, column=1, sticky="nsew", padx=5, pady=5)
+        my_leg_opt.grid(row=2, column=1, sticky="nsew", **self.grid_pad)
         # Box on or off button
         ttk.Checkbutton(my_leg_opt, text="Box On", onvalue=1, offvalue=0,
-                        variable=self.graph_settings["legend_box"]).grid(row=1, column=1, **grid_opt)
+                        variable=self.graph_settings["legend_box"]).grid(row=1, column=1, **grid_opt_but)
         ttk.Checkbutton(my_leg_opt, text="Show Legend", onvalue=True, offvalue=False,
-                        variable=self.graph_settings["show_legend"]).grid(row=2, column=1, **grid_opt)
+                        variable=self.graph_settings["show_legend"]).grid(row=2, column=1, **grid_opt_but)
         # Combobox legend location
-        ttk.Label(my_leg_opt, text="Set Legend Location:").grid(row=3, column=1, **grid_opt)
+        ttk.Label(my_leg_opt, text="Set Legend Location:").grid(row=3, column=1, **grid_opt_lab)
         ttk.Combobox(my_leg_opt, textvariable=self.graph_settings["legend_pos"], values=legend_loc,
-                     state="readonly", justify="left").grid(row=4, column=1, **grid_opt)
+                     state="readonly", justify="left").grid(row=4, column=1, columnspan=2, **grid_opt_but)
         # Close window button 'OK'
         ttk.Button(self.frame.window, text="Set",
-                   command=lambda: self.frame.window.destroy()).grid(row=3, column=1, sticky="nsew", padx=5, pady=5)
+                   command=lambda: self.frame.window.destroy()).grid(row=3, column=1, **grid_opt_but)
 
     def my_figure_size(self):
         # open window
         self.frame.window, self.frame.frame = self.call_ado_plot("Set Figure Size")
 
         def set_grid(gr, gc, s="nsew"):
-            _.grid(sticky=s, row=gr, column=gc, padx=5, pady=5, ipadx=5, ipady=5)
+            _.grid(sticky=s, row=gr, column=gc, **self.grid_pad, ipadx=5, ipady=5)
 
         my_leg = ttk.LabelFrame(self.frame.window, text="Figure Size")
-        my_leg.grid(row=1, column=1, sticky="nsew", padx=5, pady=5)
+        my_leg.grid(row=1, column=1, sticky="nsew", **self.grid_pad)
 
         info = self.graph_settings
 
@@ -857,6 +831,7 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
                             "lin_reg": self.lin_plot,
                             "fpl": self.fpl_plot,
                             "f_peaks": self.f_peaks,
+                            "uv_gibbs": self.uv_gibbs_plot,
                         }
                         mode[f_mode](my_file)
 
@@ -944,7 +919,7 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
             else:
                 l_pos = self.graph_settings["legend_pos"].get()
             if self.graph_settings["show_legend"].get():
-                self.ax1.legend(graph_labels["labels"], frameon=False, loc=l_pos)
+                self.ax1.legend(graph_labels["labels"], frameon=self.graph_settings["legend_box"].get(), loc=l_pos)
             self.ax1.set_xlabel(self.graph_settings["x_var"].get(), fontsize=x_label_font)
             self.ax1.set_ylabel(self.graph_settings["y_var"].get(), fontsize=y_label_font)
             self.ax1.minorticks_on()
@@ -959,9 +934,27 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
         data_x = file_info[info]["x_data"]
         data_y = file_info[info]["y_data"]
         p_opt, p_cov = curve_fit(func, data_x, data_y)
-        self.ax1.plot(data_x, func(data_x, *p_opt), color=self.graph_settings["fit_color"].get(), linestyle='--',
-                      label='fit: a=%5.3f, b=%5.3f' % tuple(p_opt))
-        self.ax1.legend()
+        self.ax1.plot(data_x, func(data_x, *p_opt), color=self.graph_settings["fit_color"].get(), linestyle='--')
+        graph_labels["labels"].append('fit: a=%5.3f, b=%5.3f' % tuple(p_opt))
+
+    def uv_gibbs_plot(self, info):
+        def func(v, u, lo, tm, h):
+            m = (tm + 273.15)
+            t = (v + 273.15)
+            k = (np.exp((h / 8.314472 * v) * ((t / m) - 1)))
+            y = (k / (1 + k))
+            return ((u - lo) * y) + lo
+
+        data_x = file_info[info]["x_data"]
+        data_y = file_info[info]["y_data"]
+        p_opt, p_cov = curve_fit(func, data_x, data_y, bounds=([max(data_y)*0.99, min(data_y)*0.99, 0, -100000],
+                                                               [max(data_y)*1.01, min(data_y)*1.01, 100, 100000]
+                                                               ),
+                                 method="trf")
+
+        # print(p_opt) for debugging only
+        self.ax1.plot(data_x, func(data_x, *p_opt), color=self.graph_settings["fit_color"].get(), linestyle='--')
+        graph_labels["labels"].append('fit: u=%5.3f, lo=%5.3f, tm=%5.3f, h=%5.3f' % tuple(p_opt))
 
     def fpl_plot(self, info):
 
@@ -1201,7 +1194,7 @@ class MyFile:
             for letter in alphabet:
                 if f_first.find(letter) > 0:
                     header = 0
-                    print("found letter!")
+                    # print("found letter!") # for debugging file headers
                     break
                 else:
                     header = None
