@@ -67,6 +67,7 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
             "x_tick_size": tk.IntVar(),
             "y_tick_size": tk.IntVar(),
             "interactive": tk.IntVar(),
+            "dpi": tk.IntVar(),
         }
 
         self.default_graph_var = {  # default vars that can be initialised upon program start
@@ -94,6 +95,7 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
             "legend_pos": 'best',
             "show_legend": True,
             "fit_color": 'Black',
+            "dpi": 96,
         }
 
         self.my_markers = {  # marker options list
@@ -177,8 +179,10 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
         self.tab_main = ttk.Notebook(self.frame.over_view)  # initialise the Notebook
         self.tab_data = ttk.Frame(self.tab_main)
         self.tab_graph = ttk.Frame(self.tab_main)
+        self.tab_script = ttk.Frame(self.tab_main)
         self.tab_main.add(self.tab_data, text='Data')
         self.tab_main.add(self.tab_graph, text='Graph')
+        self.tab_main.add(self.tab_script, text='Script')
         self.tab_main.grid()
         self.graph = self.graph_settings
 
@@ -203,9 +207,17 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
         self.tab_graph_rs1.grid(row=1, column=6, **self.grid_frame_opt)
         self.spacer(self.tab_graph, 1, 7)
 
+        # script window
+        self.spacer(self.tab_script, 1, 1)
+        self.tab_script_top = tk.LabelFrame(self.tab_script, text="Options")
+        self.tab_script_top.grid(row=1, column=2, **self.grid_frame_opt)
+        self.tab_script_bot = tk.LabelFrame(self.tab_script, text="Script", relief=FLAT)
+        self.tab_script_bot.grid(row=2, column=2, **self.grid_frame_opt)
+        self.spacer(self.tab_script, 1, 3)
+
         self.my_tabs()
         self.my_file_header()
-        self.window, self.ax1, self.figure1, self.bar1 = None, None, None, None
+        self.window, self.ax1, self.figure1, self.bar1, self.script = None, None, None, None, None
 
     def my_tabs(self):
         # tab data buttons
@@ -224,6 +236,11 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
         self.frame.b8a = self.my_button(loc=self.tab_graph_ls, text="Annotate", cm=lambda: self.my_annotate(), y=5)
         self.frame.b8 = self.my_button(loc=self.tab_graph_rs1, text="Set Figure", cm=lambda: self.my_figure_size(), y=4)
         self.frame.b8b = self.my_button(loc=self.tab_graph_rs1, text="Edit Figure", cm=lambda: self.edit_picture(), y=5)
+
+        # tab script buttons
+        self.my_button(loc=self.tab_script_top, text='Run', cm=None, y=1)
+        self.my_button(loc=self.tab_script_top, text='Save', cm=None, y=1, x=2)
+        self.script = tk.Text(self.tab_script_bot, height=10, width=65, relief=FLAT).grid()
 
         # label entries for graph
         ttk.Label(self.tab_graph_rs, text="X-Label:").grid(row=1, column=1, **self.grid_frame_opt_lab)
@@ -253,6 +270,10 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
             widgets.destroy()
         self.my_file_header()
         self.list_my_dataset()
+
+    def get_script(self):
+        store = self.script.get("1.0", "end-1c")
+        return store
 
     def list_my_dataset(self):  # list all data files loaded into the main dictionary
         if not file_info:
@@ -312,9 +333,9 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
                 else:
                     pass
 
-    def my_button(self, loc, text, y, cm):
+    def my_button(self, loc, text, y, cm, x=1):
         _ = ttk.Button(master=loc, text=text, command=cm)
-        _.grid(row=y, column=1, **self.grid_pad, sticky="nsew")
+        _.grid(row=y, column=x, **self.grid_pad, sticky="nsew")
         return _
 
     def menu(self):  # Top window menu call function
@@ -520,7 +541,7 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
         my_other_fit_window = tk.LabelFrame(self.frame.window, text="Additional Options")
         my_other_fit_window.grid(row=2, column=1, stick="nsew", padx=5, pady=2.5, ipady=5)
         mo_fw = my_other_fit_window
-        
+
         ttk.Label(mo_fw, text="Fit Color").grid(column=1, **my_fit_grid_opt_lab)
         # fit line colors
         ttk.Combobox(mo_fw, state="readonly", values=self.my_line_colors, justify="left",
@@ -580,15 +601,18 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
                 "cm": "= " + str(info["figure_height"].get() * 2.54) + " cm", "row": 1},
             1: {"label": "Width (inches):", "info": info["figure_width"],
                 "cm": "= " + str(info["figure_width"].get() * 2.54) + " cm", "row": 2},
+            2: {"label": "Resolution:", "info": info["dpi"],
+                "cm": "dpi", "row": 3},
         }
 
         for n in table:
             t = table[n]
             ttk.Label(my_leg, text=t["label"]).grid(row=t["row"], column=1, **self.grid_pad)
-            ttk.Entry(my_leg, textvariable=t["info"], width=2).grid(row=t["row"], column=2, **self.grid_pad)
+            ttk.Entry(my_leg, textvariable=t["info"], width=3).grid(row=t["row"], column=2, **self.grid_pad)
             ttk.Label(my_leg, text=t["cm"]).grid(row=t["row"], column=3, **self.grid_pad)
 
-        ttk.Button(main, text="OK", command=lambda: main.destroy()).grid(row=3, column=1, padx=10, pady=5, sticky="nsew")
+        ttk.Button(main, text="OK", command=lambda: main.destroy()).grid(
+            row=3, column=1, padx=10, pady=5, sticky="nsew")
 
     def my_spines(self):
         # open window
@@ -911,14 +935,29 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
 
         data_x = file_info[info]["x_data"]
         data_y = file_info[info]["y_data"]
-        p_opt, p_cov = curve_fit(func, data_x, data_y, bounds=([max(data_y) * 0.99, min(data_y) * 0.99, 0, -100000],
-                                                               [max(data_y) * 1.01, min(data_y) * 1.01, 100, 100000]
-                                                               ),
-                                 method="trf")
 
-        # print(p_opt) for debugging only
-        self.ax1.plot(data_x, func(data_x, *p_opt), color=self.graph_settings["fit_color"].get(), linestyle='--')
-        graph_labels["labels"].append('fit: u=%5.3f, lo=%5.3f, tm=%5.3f, h=%5.3f' % tuple(p_opt))
+        print(file_info[info].get("uv thermal"))
+        if file_info[info].get("uv thermal") is None:
+            p_opt, p_cov = curve_fit(func, data_x, data_y, bounds=([max(data_y) * 0.99, min(data_y) * 0.99, 0, -100000],
+                                                                   [max(data_y) * 1.01, min(data_y) * 1.01, 100, 100000]
+                                                                   ), method="trf")
+            file_info[info]["uv thermal"] = {}
+            file_info[info]["uv thermal"]["p_opt"] = p_opt
+            file_info[info]["uv thermal"]["p_cov"] = p_cov
+            y_new = []
+            for x in data_x:
+                y_new.append(func(x, *p_opt))
+            file_info[info]["uv thermal"]["y_new"] = y_new
+
+            # print(p_opt) for debugging only
+            self.ax1.plot(data_x, y_new, color=self.graph_settings["fit_color"].get(), linestyle='--')
+            graph_labels["labels"].append('fit: u=%5.3f, lo=%5.3f, tm=%5.3f, h=%5.3f' % tuple(p_opt))
+        else:
+            p_opt = file_info[info]["uv thermal"]["p_opt"]
+            y_new = file_info[info]["uv thermal"]["y_new"]
+
+            self.ax1.plot(data_x, y_new, color=self.graph_settings["fit_color"].get(), linestyle='--')
+            graph_labels["labels"].append('fit: u=%5.3f, lo=%5.3f, tm=%5.3f, h=%5.3f' % tuple(p_opt))
 
     def fpl_plot(self, info):
 
@@ -992,7 +1031,7 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
                      ('Portable Image', '*.png'),
                      ('Document Image', '*.tif')]
             self.frame.save_file = asksaveasfile(filetypes=files, defaultextension=files)
-            self.figure1.savefig(self.frame.save_file.name, dpi=300)
+            self.figure1.savefig(self.frame.save_file.name, dpi=self.graph_settings["dpi"].get())
         except AttributeError:  # pass when cancel is pressed
             pass
 
@@ -1031,6 +1070,7 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
             f.close()  # close the config file
         else:
             tk_message_box.showerror("File error", "Please load a .cfg config file format.")
+        print(file_info)
 
     def save_config(self):
         data = [('adoconf (*.cfg)', '*.cfg')]
