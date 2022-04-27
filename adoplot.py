@@ -32,6 +32,7 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
         self.y_margin_pop = (self.screen_height - self.h) / 1.5
         self.my_line_colors = ['Black', 'Blue', 'Green', 'Red', 'Cyan', 'Magenta', 'Yellow', 'White']
         self.columnconfigure((0, 20), weight=1)
+        self.par = {}
         self.graph_settings = {  # graphs settings for matplot lib
             "x_var": tk.StringVar(),
             "y_var": tk.StringVar(),
@@ -68,6 +69,8 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
             "y_tick_size": tk.IntVar(),
             "interactive": tk.IntVar(),
             "dpi": tk.IntVar(),
+            "custom_eq": tk.StringVar(),
+            "custom_par": tk.StringVar(),
         }
 
         self.default_graph_var = {  # default vars that can be initialised upon program start
@@ -163,6 +166,8 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
                             "label (start) point y-axis",
                             "end point x-axis (use for arrow annotation)",
                             "end point y-axis (use for arrow annotation)"]
+        self.my_fit_grid_opt_but = {"sticky": "nsew", "padx": 5, "pady": 2.5}
+        self.my_fit_grid_opt_lab = {"sticky": "w", "padx": 5, "pady": 0}
 
         for var in self.default_graph_var:  # loop over the default vars and place them in the active used dictionary
             self.graph_settings[var].set(self.default_graph_var[var])
@@ -182,7 +187,7 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
         self.tab_script = ttk.Frame(self.tab_main)
         self.tab_main.add(self.tab_data, text='Data')
         self.tab_main.add(self.tab_graph, text='Graph')
-        self.tab_main.add(self.tab_script, text='Script')
+        # self.tab_main.add(self.tab_script, text='Script')
         self.tab_main.grid()
         self.graph = self.graph_settings
 
@@ -208,16 +213,16 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
         self.spacer(self.tab_graph, 1, 7)
 
         # script window
-        self.spacer(self.tab_script, 1, 1)
-        self.tab_script_top = tk.LabelFrame(self.tab_script, text="Options")
-        self.tab_script_top.grid(row=1, column=2, **self.grid_frame_opt)
-        self.tab_script_bot = tk.LabelFrame(self.tab_script, text="Script", relief=FLAT)
-        self.tab_script_bot.grid(row=2, column=2, **self.grid_frame_opt)
-        self.spacer(self.tab_script, 1, 3)
+        # self.spacer(self.tab_script, 1, 1)
+        # self.tab_script_top = tk.LabelFrame(self.tab_script, text="Options")
+        # self.tab_script_top.grid(row=1, column=2, **self.grid_frame_opt)
+        # self.tab_script_bot = tk.LabelFrame(self.tab_script, text="Script", relief=FLAT)
+        # self.tab_script_bot.grid(row=2, column=2, **self.grid_frame_opt)
+        # self.spacer(self.tab_script, 1, 3)
 
         self.my_tabs()
         self.my_file_header()
-        self.window, self.ax1, self.figure1, self.bar1, self.script = None, None, None, None, None
+        self.window, self.ax1, self.figure1, self.bar1 = None, None, None, None
 
     def my_tabs(self):
         # tab data buttons
@@ -238,9 +243,9 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
         self.frame.b8b = self.my_button(loc=self.tab_graph_rs1, text="Edit Figure", cm=lambda: self.edit_picture(), y=5)
 
         # tab script buttons
-        self.my_button(loc=self.tab_script_top, text='Run', cm=None, y=1)
-        self.my_button(loc=self.tab_script_top, text='Save', cm=None, y=1, x=2)
-        self.script = tk.Text(self.tab_script_bot, height=10, width=65, relief=FLAT).grid()
+        # self.my_button(loc=self.tab_script_top, text='Run', cm=None, y=1)
+        # self.my_button(loc=self.tab_script_top, text='Save', cm=None, y=1, x=2)
+        # self.script = tk.Text(self.tab_script_bot, height=10, width=65, relief=FLAT).grid()
 
         # label entries for graph
         ttk.Label(self.tab_graph_rs, text="X-Label:").grid(row=1, column=1, **self.grid_frame_opt_lab)
@@ -531,15 +536,21 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
             1: {"name": "Linear Regression", "var": "lin_reg"},
             2: {"name": "Four Parameter Logistic", "var": "fpl"},
             3: {"name": "Find Peaks", "var": "f_peaks"},
-            4: {"name": "UV Thermal", "var": "uv_gibbs"}
+            4: {"name": "UV Thermal", "var": "uv_gibbs"},
+            5: {"name": "Custom Equation", "var": "custom_eq"}
         }
 
+        # run through all available fit options
         for fits in my_fits:
             ttk.Checkbutton(my_fit_window, text=my_fits[fits]["name"], onvalue=my_fits[fits]["var"], offvalue="",
                             variable=self.graph_settings["fit"]).grid(column=1, **my_fit_grid_opt_but)
 
+        # button for custom equations that will popup a new window
+        custom_fit = ttk.Button(self.frame.window, text="Set Custom Equation", command=lambda: self.my_custom_eq())
+        custom_fit.grid(row=2, column=1, **my_fit_grid_opt_but)
+
         my_other_fit_window = tk.LabelFrame(self.frame.window, text="Additional Options")
-        my_other_fit_window.grid(row=2, column=1, stick="nsew", padx=5, pady=2.5, ipady=5)
+        my_other_fit_window.grid(row=3, column=1, stick="nsew", padx=5, pady=2.5, ipady=5)
         mo_fw = my_other_fit_window
 
         ttk.Label(mo_fw, text="Fit Color").grid(column=1, **my_fit_grid_opt_lab)
@@ -548,6 +559,19 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
                      textvariable=self.graph_settings["fit_color"]).grid(
             column=1, columnspan=2, **my_fit_grid_opt_but)
         ttk.Button(main, text="Set", command=lambda: main.destroy()).grid(column=1, **my_fit_grid_opt_but)
+
+    def my_custom_eq(self):
+        # open window
+        self.frame.window, self.frame.frame = self.call_ado_plot("Input custom equation")
+        data = self.graph_settings
+        main = self.frame.window
+
+        lf1 = ttk.LabelFrame(self.frame.window, text="Input equation")
+        lf1.grid(row=1, **self.grid_frame_opt_lab)
+        ttk.Entry(lf1, textvariable=data["custom_eq"], width=20).grid(row=1, **self.my_fit_grid_opt_but)
+        ttk.Label(lf1, text="Define Parameters").grid(row=2, **self.my_fit_grid_opt_lab)
+        ttk.Entry(lf1, textvariable=data["custom_par"], width=20).grid(row=3, **self.my_fit_grid_opt_but)
+        ttk.Button(lf1, text="Set", command=lambda: main.destroy()).grid(row=4, **self.my_fit_grid_opt_but)
 
     def my_legend(self):
         # open window
@@ -820,6 +844,7 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
                             "fpl": self.fpl_plot,
                             "f_peaks": self.f_peaks,
                             "uv_gibbs": self.uv_gibbs_plot,
+                            "custom_eq": self.custom_plot,
                         }
                         mode[f_mode](my_file)
 
@@ -916,6 +941,8 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
             self.graph_settings["bar"].set(0)
 
     def lin_plot(self, info):
+        print(type(file_info[info]["x_data"]))
+
         def func(a, x, b):
             return a * x + b
 
@@ -924,6 +951,32 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
         p_opt, p_cov = curve_fit(func, data_x, data_y)
         self.ax1.plot(data_x, func(data_x, *p_opt), color=self.graph_settings["fit_color"].get(), linestyle='--')
         graph_labels["labels"].append('fit: a=%5.3f, b=%5.3f' % tuple(p_opt))
+
+    def custom_plot(self, info):
+        # custom equation function
+        equ = self.graph_settings["custom_eq"].get()  # input equation
+        par = self.graph_settings["custom_par"].get()  # input parameters
+
+        the_eq = 'def func(' + par + '):\n    return ' + equ + ''  # parse the inputted equation using exec
+        print(the_eq)
+        exec(the_eq, globals())  # make the custom equation globally available
+
+        data_x = file_info[info]["x_data"]  # retrieve dataset variables
+        data_y = file_info[info]["y_data"]
+        p_opt, p_cov = curve_fit(func, data_x, data_y)     # run the curve fit
+        self.ax1.plot(data_x, func(data_x, *p_opt), color=self.graph_settings["fit_color"].get(), linestyle='--')
+        par_l1 = [n for n in par.split(",")]
+        par_l2 = []
+        for i in par_l1:
+            if i != "x":
+                par_l2.append(i)
+        par_t = tuple(par_l2)
+        par_str = ''
+        for p in par_t:
+            par_str = par_str + p + '=%5.3f '
+        full_par_str = 'fit: ' + par_str
+        graph_labels["labels"].append(full_par_str % tuple(p_opt))
+        # graph_labels["labels"].append('fit: a=%5.3f, b=%5.3f' % tuple(p_opt))
 
     def uv_gibbs_plot(self, info):
         def func(v, u, lo, tm, h):
@@ -944,6 +997,7 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
             file_info[info]["uv thermal"] = {}
             file_info[info]["uv thermal"]["p_opt"] = p_opt
             file_info[info]["uv thermal"]["p_cov"] = p_cov
+            print(p_opt)
             y_new = []
             for x in data_x:
                 y_new.append(func(x, *p_opt))
@@ -1259,6 +1313,15 @@ class MyFile:
         self.name = self.identifier[self.length - 1]
 
     def set_var(self):
+        # convert list to ndarray
+        try:
+            if type(self.x) is list:
+                temp = np.asarray(self.x)
+                self.x = temp
+                temp = np.asarray(self.y)
+                self.y = temp
+        except TypeError:
+            pass
         # set variables in app data array file_info
         file_info[self.filename] = {
             "color": tk.StringVar(),
