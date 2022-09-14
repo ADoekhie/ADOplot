@@ -537,7 +537,9 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
             2: {"name": "Four Parameter Logistic", "var": "fpl"},
             3: {"name": "Find Peaks", "var": "f_peaks"},
             4: {"name": "UV Thermal", "var": "uv_gibbs"},
-            5: {"name": "Custom Equation", "var": "custom_eq"}
+            5: {"name": "CD two state", "var": "cd_two_state"},
+            6: {"name": "CD two state lin corr", "var": "cd_two_state_lin"},
+            7: {"name": "Custom Equation", "var": "custom_eq"}
         }
 
         # run through all available fit options
@@ -844,6 +846,8 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
                             "fpl": self.fpl_plot,
                             "f_peaks": self.f_peaks,
                             "uv_gibbs": self.uv_gibbs_plot,
+                            "cd_two_state": self.cd_two_state,
+                            "cd_two_state_lin": self.cd_two_state_lin,
                             "custom_eq": self.custom_plot,
                         }
                         mode[f_mode](my_file)
@@ -963,7 +967,7 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
 
         data_x = file_info[info]["x_data"]  # retrieve dataset variables
         data_y = file_info[info]["y_data"]
-        p_opt, p_cov = curve_fit(func, data_x, data_y)     # run the curve fit
+        p_opt, p_cov = curve_fit(func, data_x, data_y)  # run the curve fit
         self.ax1.plot(data_x, func(data_x, *p_opt), color=self.graph_settings["fit_color"].get(), linestyle='--')
         par_l1 = [n for n in par.split(",")]
         par_l2 = []
@@ -991,9 +995,18 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
 
         print(file_info[info].get("uv thermal"))
         if file_info[info].get("uv thermal") is None:
-            p_opt, p_cov = curve_fit(func, data_x, data_y, bounds=([max(data_y) * 0.99, min(data_y) * 0.99, 0, -100000],
-                                                                   [max(data_y) * 1.01, min(data_y) * 1.01, 100, 100000]
-                                                                   ), method="trf")
+            if max(data_y) < 0:
+                m_lb = 1.1
+                m_ub = 0.9
+            else:
+                m_lb = 0.9
+                m_ub = 1.1
+            p_opt, p_cov = curve_fit(func,
+                                     data_x,
+                                     data_y,
+                                     bounds=([max(data_y) * m_lb, min(data_y) * m_lb, 0, -100000],
+                                             [max(data_y) * m_ub, min(data_y) * m_ub, 100, 100000]),
+                                     method="trf")
             file_info[info]["uv thermal"] = {}
             file_info[info]["uv thermal"]["p_opt"] = p_opt
             file_info[info]["uv thermal"]["p_cov"] = p_cov
@@ -1012,6 +1025,96 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
 
             self.ax1.plot(data_x, y_new, color=self.graph_settings["fit_color"].get(), linestyle='--')
             graph_labels["labels"].append('fit: u=%5.3f, lo=%5.3f, tm=%5.3f, h=%5.3f' % tuple(p_opt))
+
+    def cd_two_state(self, info):
+        def func(v, u, lo, tm, h):
+            m = (tm + 273.15)
+            t = (v + 273.15)
+            k = (np.exp((h / 8.314472 * v) * ((t / m) - 1)))
+            y = (k / (1 + k))
+            return ((u - lo) * y) + lo
+
+        data_x = file_info[info]["x_data"]
+        data_y = file_info[info]["y_data"]
+
+        print(file_info[info].get("cd two state"))
+        if file_info[info].get("cd two state") is None:
+            if max(data_y) < 0:
+                m_lb = 1.1
+                m_ub = 0.9
+            else:
+                m_lb = 0.9
+                m_ub = 1.1
+            p_opt, p_cov = curve_fit(func,
+                                     data_x,
+                                     data_y,
+                                     bounds=([max(data_y) * m_lb, min(data_y) * m_lb, 0, -100000],
+                                             [max(data_y) * m_ub, min(data_y) * m_ub, 100, 100000]),
+                                     method="trf")
+            file_info[info]["cd two state"] = {}
+            file_info[info]["cd two state"]["p_opt"] = p_opt
+            file_info[info]["cd two state"]["p_cov"] = p_cov
+            print(p_opt, p_cov)
+            y_new = []
+            for x in data_x:
+                y_new.append(func(x, *p_opt))
+            file_info[info]["cd two state"]["y_new"] = y_new
+
+            # print(p_opt) for debugging only
+            self.ax1.plot(data_x, y_new, color=self.graph_settings["fit_color"].get(), linestyle='--')
+            graph_labels["labels"].append('fit: u=%5.3f, lo=%5.3f, tm=%5.3f, h=%5.3f' % tuple(p_opt))
+        else:
+            p_opt = file_info[info]["cd two state"]["p_opt"]
+            y_new = file_info[info]["cd two state"]["y_new"]
+
+            self.ax1.plot(data_x, y_new, color=self.graph_settings["fit_color"].get(), linestyle='--')
+            graph_labels["labels"].append('fit: u=%5.3f, lo=%5.3f, tm=%5.3f, h=%5.3f' % tuple(p_opt))
+
+    def cd_two_state_lin(self, info):
+        # A two-state transition of a monomer between folded and unfolded forms with correcting the data for pre- and
+        # post-transition linear changes in ellipticity as a function of temperature.
+        def func(v, u, lo, tm, h, u1, l1):
+            m = tm + 273.15
+            t = v + 273.15
+            k = (np.exp((h / 8.314472 * v) * ((t / m) - 1)))
+            y = k / (1 + k)
+            return y * ((u + (u1 * v)) - (lo + (l1 * v))) + (lo + (l1 * v))
+
+        data_x = file_info[info]["x_data"]
+        data_y = file_info[info]["y_data"]
+
+        print(file_info[info].get("cd two state lin"))
+        if file_info[info].get("cd two state lin") is None:
+            if max(data_y) < 0:
+                m_lb = 1.1
+                m_ub = 0.9
+            else:
+                m_lb = 0.9
+                m_ub = 1.1
+            p_opt, p_cov = curve_fit(func,
+                                     data_x,
+                                     data_y,
+                                     bounds=([max(data_y) * m_lb, min(data_y) * m_lb, 0, -100000, -1, -1],
+                                             [max(data_y) * m_ub, min(data_y) * m_ub, 100, 100000, 1, 1]),
+                                     method="trf")
+            file_info[info]["cd two state lin"] = {}
+            file_info[info]["cd two state lin"]["p_opt"] = p_opt
+            file_info[info]["cd two state lin"]["p_cov"] = p_cov
+            print(p_opt, p_cov)
+            y_new = []
+            for x in data_x:
+                y_new.append(func(x, *p_opt))
+            file_info[info]["cd two state lin"]["y_new"] = y_new
+
+            # print(p_opt) for debugging only
+            self.ax1.plot(data_x, y_new, color=self.graph_settings["fit_color"].get(), linestyle='--')
+            graph_labels["labels"].append('fit: u=%5.3f, lo=%5.3f, tm=%5.3f, h=%5.3f, u1=%5.3f, l1=%5.3f' % tuple(p_opt))
+        else:
+            p_opt = file_info[info]["cd two state lin"]["p_opt"]
+            y_new = file_info[info]["cd two state lin"]["y_new"]
+
+            self.ax1.plot(data_x, y_new, color=self.graph_settings["fit_color"].get(), linestyle='--')
+            graph_labels["labels"].append('fit: u=%5.3f, lo=%5.3f, tm=%5.3f, h=%5.3f, u1=%5.3f, l1=%5.3f' % tuple(p_opt))
 
     def fpl_plot(self, info):
 
