@@ -71,6 +71,7 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
             "dpi": tk.IntVar(),
             "custom_eq": tk.StringVar(),
             "custom_par": tk.StringVar(),
+            "use_data_for_fit_color": tk.BooleanVar(),
         }
 
         self.default_graph_var = {  # default vars that can be initialised upon program start
@@ -99,6 +100,7 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
             "show_legend": True,
             "fit_color": 'Black',
             "dpi": 96,
+            "use_data_for_fit_color": False,
         }
 
         self.my_markers = {  # marker options list
@@ -211,15 +213,6 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
         self.tab_graph_rs1 = tk.LabelFrame(self.tab_graph, text="Advanced")
         self.tab_graph_rs1.grid(row=1, column=6, **self.grid_frame_opt)
         self.spacer(self.tab_graph, 1, 7)
-
-        # script window
-        # self.spacer(self.tab_script, 1, 1)
-        # self.tab_script_top = tk.LabelFrame(self.tab_script, text="Options")
-        # self.tab_script_top.grid(row=1, column=2, **self.grid_frame_opt)
-        # self.tab_script_bot = tk.LabelFrame(self.tab_script, text="Script", relief=FLAT)
-        # self.tab_script_bot.grid(row=2, column=2, **self.grid_frame_opt)
-        # self.spacer(self.tab_script, 1, 3)
-
         self.my_tabs()
         self.my_file_header()
         self.window, self.ax1, self.figure1, self.bar1 = None, None, None, None
@@ -241,11 +234,6 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
         self.frame.b8a = self.my_button(loc=self.tab_graph_ls, text="Annotate", cm=lambda: self.my_annotate(), y=5)
         self.frame.b8 = self.my_button(loc=self.tab_graph_rs1, text="Set Figure", cm=lambda: self.my_figure_size(), y=4)
         self.frame.b8b = self.my_button(loc=self.tab_graph_rs1, text="Edit Figure", cm=lambda: self.edit_picture(), y=5)
-
-        # tab script buttons
-        # self.my_button(loc=self.tab_script_top, text='Run', cm=None, y=1)
-        # self.my_button(loc=self.tab_script_top, text='Save', cm=None, y=1, x=2)
-        # self.script = tk.Text(self.tab_script_bot, height=10, width=65, relief=FLAT).grid()
 
         # label entries for graph
         ttk.Label(self.tab_graph_rs, text="X-Label:").grid(row=1, column=1, **self.grid_frame_opt_lab)
@@ -484,6 +472,12 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
 
         for f in [self.frame.color, self.frame.line, self.frame.marker]:
             f.grid(column=1, **kw)
+
+        if self.graph_settings["fit"].get():
+            self.frame.dcolor = tk.LabelFrame(self.frame.window, text="fit color", **lab_opt)
+            self.frame.dcolor.grid(row=1, column=2, **kw)
+            ttk.Checkbutton(self.frame.dcolor, onvalue=True, offvalue=False,
+                            variable=self.graph_settings["use_data_for_fit_color"]).grid(column=2, **kw_c)
 
         for err, err_bar, r in zip(["y_error", "x_error"], ["y_error_bar", "x_error_bar"], [0, 1]):
             if len(fym[err]) > 0:
@@ -944,6 +938,38 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
             self.ax1.tick_params(axis="y", labelsize=self.graph_settings["y_tick_size"].get())
             self.graph_settings["bar"].set(0)
 
+    @staticmethod
+    def data_check(info):
+
+        data_y = file_info[info]["y_data"]
+
+        if max(data_y) < 0 and min(data_y) < 0:
+            mi_lb = 1.1
+            mi_ub = 0.9
+            ma_lb = 1.1
+            ma_ub = 0.9
+        elif max(data_y) > 0 and min(data_y) > 0:
+            mi_lb = 0.9
+            mi_ub = 1.1
+            ma_lb = 0.9
+            ma_ub = 1.1
+        elif max(data_y) > 0 and min(data_y) < 0:
+            mi_lb = 1.1
+            mi_ub = 0.9
+            ma_lb = 0.9
+            ma_ub = 1.1
+        elif max(data_y) < 0 and min(data_y) > 0:
+            mi_lb = 0.9
+            mi_ub = 1.1
+            ma_lb = 1.1
+            ma_ub = 0.9
+        else:
+            mi_lb = 1
+            mi_ub = 1
+            ma_lb = 1
+            ma_ub = 1
+        return mi_lb, mi_ub, ma_lb, ma_ub
+
     def lin_plot(self, info):
         print(type(file_info[info]["x_data"]))
 
@@ -995,17 +1021,12 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
 
         print(file_info[info].get("uv thermal"))
         if file_info[info].get("uv thermal") is None:
-            if max(data_y) < 0:
-                m_lb = 1.1
-                m_ub = 0.9
-            else:
-                m_lb = 0.9
-                m_ub = 1.1
+            mi_lb, mi_ub, ma_lb, ma_ub = self.data_check(info)
             p_opt, p_cov = curve_fit(func,
                                      data_x,
                                      data_y,
-                                     bounds=([max(data_y) * m_lb, min(data_y) * m_lb, 0, -100000],
-                                             [max(data_y) * m_ub, min(data_y) * m_ub, 100, 100000]),
+                                     bounds=([max(data_y) * ma_lb, min(data_y) * mi_lb, 0, -100000],
+                                             [max(data_y) * ma_ub, min(data_y) * mi_ub, 100, 100000]),
                                      method="trf")
             file_info[info]["uv thermal"] = {}
             file_info[info]["uv thermal"]["p_opt"] = p_opt
@@ -1039,35 +1060,33 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
 
         print(file_info[info].get("cd two state"))
         if file_info[info].get("cd two state") is None:
-            if max(data_y) < 0:
-                m_lb = 1.1
-                m_ub = 0.9
-            else:
-                m_lb = 0.9
-                m_ub = 1.1
+            mi_lb, mi_ub, ma_lb, ma_ub = self.data_check(info)
             p_opt, p_cov = curve_fit(func,
                                      data_x,
                                      data_y,
-                                     bounds=([max(data_y) * m_lb, min(data_y) * m_lb, 0, -100000],
-                                             [max(data_y) * m_ub, min(data_y) * m_ub, 100, 100000]),
+                                     bounds=([max(data_y) * ma_lb, min(data_y) * mi_lb, 0, -100000],
+                                             [max(data_y) * ma_ub, min(data_y) * mi_ub, 100, 100000]),
                                      method="trf")
             file_info[info]["cd two state"] = {}
             file_info[info]["cd two state"]["p_opt"] = p_opt
             file_info[info]["cd two state"]["p_cov"] = p_cov
-            print(p_opt, p_cov)
-            y_new = []
-            for x in data_x:
-                y_new.append(func(x, *p_opt))
-            file_info[info]["cd two state"]["y_new"] = y_new
 
-            # print(p_opt) for debugging only
-            self.ax1.plot(data_x, y_new, color=self.graph_settings["fit_color"].get(), linestyle='--')
+            y_new = []
+            x_new = np.arange(min(data_x), max(data_x), 1)
+            par = file_info[info]["cd two state lin"]["p_opt"]
+            for x in x_new:
+                y_new.append(func(x, *par))
+            file_info[info]["cd two state lin"]["y_new"] = y_new
+            file_info[info]["cd two state lin"]["x_new"] = x_new
+
+            self.ax1.plot(x_new, y_new, color=self.graph_settings["fit_color"].get(), linestyle='--')
             graph_labels["labels"].append('fit: u=%5.3f, lo=%5.3f, tm=%5.3f, h=%5.3f' % tuple(p_opt))
         else:
             p_opt = file_info[info]["cd two state"]["p_opt"]
             y_new = file_info[info]["cd two state"]["y_new"]
+            x_new = file_info[info]["cd two state"]["x_new"]
 
-            self.ax1.plot(data_x, y_new, color=self.graph_settings["fit_color"].get(), linestyle='--')
+            self.ax1.plot(x_new, y_new, color=self.graph_settings["fit_color"].get(), linestyle='--')
             graph_labels["labels"].append('fit: u=%5.3f, lo=%5.3f, tm=%5.3f, h=%5.3f' % tuple(p_opt))
 
     def cd_two_state_lin(self, info):
@@ -1085,84 +1104,82 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
 
         print(file_info[info].get("cd two state lin"))
         if file_info[info].get("cd two state lin") is None:
-            if max(data_y) < 0:
-                m_lb = 1.1
-                m_ub = 0.9
-            else:
-                m_lb = 0.9
-                m_ub = 1.1
+            mi_lb, mi_ub, ma_lb, ma_ub = self.data_check(info)
             p_opt, p_cov = curve_fit(func,
                                      data_x,
                                      data_y,
-                                     bounds=([max(data_y) * m_lb, min(data_y) * m_lb, 0, -100000, -1, -1],
-                                             [max(data_y) * m_ub, min(data_y) * m_ub, 100, 100000, 1, 1]),
+                                     bounds=([max(data_y) * ma_lb, min(data_y) * mi_lb, 0, -100000, -1, -1],
+                                             [max(data_y) * ma_ub, min(data_y) * mi_ub, 100, 100000, 1, 1]),
                                      method="trf")
             file_info[info]["cd two state lin"] = {}
             file_info[info]["cd two state lin"]["p_opt"] = p_opt
             file_info[info]["cd two state lin"]["p_cov"] = p_cov
-            print(p_opt, p_cov)
-            y_new = []
-            for x in data_x:
-                y_new.append(func(x, *p_opt))
-            file_info[info]["cd two state lin"]["y_new"] = y_new
 
-            # print(p_opt) for debugging only
-            self.ax1.plot(data_x, y_new, color=self.graph_settings["fit_color"].get(), linestyle='--')
-            graph_labels["labels"].append('fit: u=%5.3f, lo=%5.3f, tm=%5.3f, h=%5.3f, u1=%5.3f, l1=%5.3f' % tuple(p_opt))
+            y_new = []
+            x_new = np.arange(min(data_x), max(data_x), 1)
+            par = file_info[info]["cd two state lin"]["p_opt"]
+            for x in x_new:
+                y_new.append(func(x, *par))
+            file_info[info]["cd two state lin"]["y_new"] = y_new
+            file_info[info]["cd two state lin"]["x_new"] = x_new
+
+            self.ax1.plot(x_new, y_new, color=self.graph_settings["fit_color"].get(), linestyle='--')
+            graph_labels["labels"].append(
+                'fit: u=%5.3f, lo=%5.3f, tm=%5.3f, h=%5.3f, u1=%5.3f, l1=%5.3f' % tuple(p_opt))
         else:
             p_opt = file_info[info]["cd two state lin"]["p_opt"]
             y_new = file_info[info]["cd two state lin"]["y_new"]
+            x_new = file_info[info]["cd two state lin"]["x_new"]
 
-            self.ax1.plot(data_x, y_new, color=self.graph_settings["fit_color"].get(), linestyle='--')
-            graph_labels["labels"].append('fit: u=%5.3f, lo=%5.3f, tm=%5.3f, h=%5.3f, u1=%5.3f, l1=%5.3f' % tuple(p_opt))
+            self.ax1.plot(x_new, y_new, color=self.graph_settings["fit_color"].get(), linestyle='--')
+            graph_labels["labels"].append(
+                'fit: u=%5.3f, lo=%5.3f, tm=%5.3f, h=%5.3f, u1=%5.3f, l1=%5.3f' % tuple(p_opt))
 
     def fpl_plot(self, info):
 
         def func(xe, a, b, cc, d):
             return d + ((a - d) / (1 + ((xe / cc) ** b)))
 
-        dat = file_info[info]
-        data_y = dat["y_data"]
-        data_x = dat["x_data"]
+        data_y = file_info[info]["y_data"]
+        data_x = file_info[info]["x_data"]
 
-        if dat.get("p_opt") is None:
-            try:
-                if data_y[0] < data_y[-1]:
-                    p_opt, p_cov = curve_fit(func, data_x, data_y, bounds=([-4, -np.inf, min(data_x), min(data_y)],
-                                                                           [min(data_y), np.inf, max(data_x),
-                                                                            max(data_y)]), method="trf")
-                    dat["p_opt"] = p_opt
-                    dat["p_cov"] = p_cov
+        if file_info[info].get("fpl") is None:
+            mi_lb, mi_ub, ma_lb, ma_ub = self.data_check(info)
 
-                elif data_y[0] > data_y[-1]:
-                    p_opt, p_cov = curve_fit(func, data_x, data_y, bounds=([min(data_y), -np.inf, min(data_x), -4],
-                                                                           [max(data_y),
-                                                                            np.inf,
-                                                                            max(data_x),
-                                                                            min(data_y)]), method="trf")
-                    dat["p_opt"] = p_opt
-                    dat["p_cov"] = p_cov
-            except ValueError:
-                pass
-
+            p_opt, p_cov = curve_fit(func, data_x, data_y, bounds=(
+                [min(data_y) * mi_lb, -np.inf, min(data_x), max(data_y) * ma_lb],
+                [min(data_y) * mi_ub, np.inf, max(data_x), max(data_y) * ma_ub]), method="trf")
+            file_info[info]["fpl"] = {}
+            file_info[info]["fpl"]["p_opt"] = p_opt
+            file_info[info]["fpl"]["p_cov"] = p_cov
             y_new = []
-            x_new = np.arange(min(data_x), max(data_x), (len(data_x) / 10))
-
-            par = dat["p_opt"]
+            x_new = np.arange(min(data_x), max(data_x), abs(min(data_x)))
+            par = file_info[info]["fpl"]["p_opt"]
             for x in x_new:
                 y_new.append(func(x, *par))
 
-            self.ax1.plot(x_new, y_new, color=self.graph_settings["fit_color"].get(), linestyle='--')
+            if self.graph_settings["use_data_for_fit_color"].get() is True:
+                f_c = file_info[info]["color"].get()
+            else:
+                f_c = self.graph_settings["fit_color"].get()
+
+            self.ax1.plot(x_new, y_new, color=f_c, linestyle='--')
             graph_labels["labels"].append('fit: a=%.1f, b=%.1f, c=%.1f, d=%.1f' % tuple(par))
 
-            dat["x_new"] = x_new
-            dat["y_new"] = y_new
+            file_info[info]["fpl"]["x_new"] = x_new
+            file_info[info]["fpl"]["y_new"] = y_new
         else:
-            p_opt = dat["p_opt"]
-            x_new = dat["x_new"]
-            y_new = dat["y_new"]
 
-            self.ax1.plot(x_new, y_new, color=self.graph_settings["fit_color"].get(), linestyle='--')
+            if self.graph_settings["use_data_for_fit_color"].get() is True:
+                f_c = file_info[info]["color"].get()
+            else:
+                f_c = self.graph_settings["fit_color"].get()
+
+            p_opt = file_info[info]["fpl"]["p_opt"]
+            x_new = file_info[info]["fpl"]["x_new"]
+            y_new = file_info[info]["fpl"]["y_new"]
+
+            self.ax1.plot(x_new, y_new, color=f_c, linestyle='--')
             graph_labels["labels"].append('fit: a=%.1f, b=%.1f, c=%.1f, d=%.1f' % tuple(p_opt))
 
     def f_peaks(self, info):
