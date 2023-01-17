@@ -1,4 +1,3 @@
-# import math
 import tkinter as tk
 from tkinter import ttk
 import numpy as np
@@ -17,13 +16,16 @@ graph_labels = {"labels": []}  # separate dictionary with labels list for easy J
 
 
 class MyFrame(tk.Tk):  # The window frame this program runs in
-
     def __init__(self):
         super().__init__()  # initialise all tkinter functions
 
         # window frame settings
-        self.w = 800
-        self.h = 650
+        self.file_info = file_info
+        self.original_dpi = 143.858407079646
+        self.dpi = self.winfo_fpixels('1i')
+        self.scale = self.dpi / self.original_dpi
+        self.w = 800 * self.scale
+        self.h = 650 * self.scale
         self.screen_width = self.winfo_screenwidth()
         self.screen_height = self.winfo_screenheight()
         self.x_margin = (self.screen_width - self.w) / 2
@@ -940,7 +942,6 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
 
     @staticmethod
     def data_check(info):
-
         data_y = file_info[info]["y_data"]
 
         if max(data_y) < 0 and min(data_y) < 0:
@@ -1073,11 +1074,11 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
 
             y_new = []
             x_new = np.arange(min(data_x), max(data_x), 1)
-            par = file_info[info]["cd two state lin"]["p_opt"]
+            par = file_info[info]["cd two state"]["p_opt"]
             for x in x_new:
                 y_new.append(func(x, *par))
-            file_info[info]["cd two state lin"]["y_new"] = y_new
-            file_info[info]["cd two state lin"]["x_new"] = x_new
+            file_info[info]["cd two state"]["y_new"] = y_new
+            file_info[info]["cd two state"]["x_new"] = x_new
 
             self.ax1.plot(x_new, y_new, color=self.graph_settings["fit_color"].get(), linestyle='--')
             graph_labels["labels"].append('fit: u=%5.3f, lo=%5.3f, tm=%5.3f, h=%5.3f' % tuple(p_opt))
@@ -1136,7 +1137,6 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
                 'fit: u=%5.3f, lo=%5.3f, tm=%5.3f, h=%5.3f, u1=%5.3f, l1=%5.3f' % tuple(p_opt))
 
     def fpl_plot(self, info):
-
         def func(xe, a, b, cc, d):
             return d + ((a - d) / (1 + ((xe / cc) ** b)))
 
