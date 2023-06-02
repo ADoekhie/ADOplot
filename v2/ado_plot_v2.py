@@ -4,6 +4,7 @@ from tkinter import *
 import json
 from _file_processing import *
 from _graph import *
+from _stats import *
 
 
 class MyFrame(tk.Tk):  # The window frame this program runs in
@@ -41,9 +42,10 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
         self.tab_main = ttk.Notebook(self.frame.over_view)  # initialise the Notebook
         self.tab_data = ttk.Frame(self.tab_main)
         self.tab_graph = ttk.Frame(self.tab_main)
-        self.tab_script = ttk.Frame(self.tab_main)
+        self.tab_stats = ttk.Frame(self.tab_main)
         self.tab_main.add(self.tab_data, text='Data')
         self.tab_main.add(self.tab_graph, text='Graph')
+        self.tab_main.add(self.tab_stats, text='Stats')
         # self.tab_main.add(self.tab_script, text='Script')
         self.tab_main.grid()
         self.graph = MySettings.graph_settings
@@ -68,12 +70,23 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
         self.tab_graph_rs1 = tk.LabelFrame(self.tab_graph, text="Advanced")
         self.tab_graph_rs1.grid(row=1, column=6, **MySettings.grid_frame_opt)
         self.spacer(self.tab_graph, 1, 7)
+
+        # tab stats labelframe and grid
+        self.spacer(self.tab_stats, 1, 1)
+        self.tab_stats_ls = tk.LabelFrame(self.tab_stats, text="Statistics")
+        self.tab_stats_ls.grid(row=1, column=2, **MySettings.grid_frame_opt)
+
+        self.spacer(self.tab_stats, 1, 3)
+        self.tab_stats_md = tk.LabelFrame(self.tab_stats, text="Description")
+        self.tab_stats_md.grid(row=1, column=4, **MySettings.grid_frame_opt)
+
+        # invoke all options
         self.my_tabs()
         self.my_file_header()
         self.window, self.ax1, self.figure1, self.bar1 = None, None, None, None
 
     def my_tabs(self):
-        tabs = {    # tab data buttons
+        tabs = {  # tab data buttons
             1: {"loc": self.tab_data_ls, "text": "Load File(s)", "cm": self.my_import, "y": 1},
             2: {"loc": self.tab_data_ls, "text": "New Dataset", "cm": self.my_new_file, "y": 2},
             3: {"loc": self.tab_graph_ls, "text": "Plot Graph", "cm": self.plot, "y": 1},
@@ -86,6 +99,8 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
             10: {"loc": self.tab_graph_ls, "text": "Annotate", "cm": self.my_annotate, "y": 5},
             11: {"loc": self.tab_graph_rs1, "text": "Set Figure", "cm": self.my_figure_size, "y": 4},
             12: {"loc": self.tab_graph_rs1, "text": "Edit Figure", "cm": self.edit_picture, "y": 5},
+            13: {"loc": self.tab_stats_ls, "text": "Choose test", "cm": self.my_stats, "y": 1},
+            14: {"loc": self.tab_stats_ls, "text": "Run test", "cm": self.my_run_stats, "y": 2},
         }
         for t in tabs:
             self.my_button(loc=tabs[t]["loc"], text=tabs[t]["text"], cm=tabs[t]["cm"], y=tabs[t]["y"])
@@ -188,7 +203,7 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
 
     def call_ado_plot(self, title):  # Standard toplevel window function for other functions to use
         # open new window
-        self.frame.window = tk.Toplevel(ado_plot)
+        self.frame.window = tk.Toplevel(self)
         self.frame.window.geometry("+%d+%d" % (self.x_margin_pop, self.y_margin_pop))
         self.frame.window.title(title)
         self.frame.window.resizable(0, 0)
@@ -221,15 +236,15 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
             try:
                 self.frame.text.insert(INSERT, MySettings.file_info[file]["y_error"][x])
                 self.frame.text.insert(INSERT, "\t")
-            except IndexError:
+            except IndexError or TypeError:
                 self.frame.text.insert(INSERT, "\t")
-                return
+                pass
             try:
                 self.frame.text.insert(INSERT, MySettings.file_info[file]["x_error"][x])
                 self.frame.text.insert(INSERT, "\t")
-            except IndexError:
+            except IndexError or TypeError:
                 self.frame.text.insert(INSERT, "\t")
-                return
+                pass
             self.frame.text.insert(INSERT, "\n")
 
         self.frame.text.grid(row=1, column=1)
@@ -276,6 +291,7 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
             "Y Label Font Size": "y_label_font",
             "X Tick Font Size": "x_tick_size",
             "Y Tick Font Size": "y_tick_size",
+            "legend Font Size": "legend_font",
         }
 
         a = 1
@@ -390,6 +406,33 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
                      textvariable=MySettings.graph_settings["fit_color"]).grid(
             column=1, columnspan=2, **my_fit_grid_opt_but)
         ttk.Button(main, text="Set", command=lambda: main.destroy()).grid(column=1, **my_fit_grid_opt_but)
+
+    def my_stats(self):
+        # open window
+        self.frame.window, self.frame.frame = self.call_ado_plot("Statistics")
+        my_fit_grid_opt_but = {"sticky": "nsew", "padx": 5, "pady": 2.5}
+        # my_fit_grid_opt_lab = {"sticky": "w", "padx": 5, "pady": 0}
+        main = self.frame.window
+
+        my_fit_window = tk.LabelFrame(self.frame.window, text="Select Test")
+        my_fit_window.grid(row=1, column=1, stick="nsew", padx=5, pady=2.5, ipady=5)
+
+        # set new frame in window
+        my_stats = MySettings.my_stats
+
+        # run through all available fit options
+        for fits in my_stats:
+            ttk.Checkbutton(my_fit_window, text=my_stats[fits]["name"], onvalue=my_stats[fits]["var"], offvalue="",
+                            variable=MySettings.graph_settings["stats_test"]).grid(column=1, **my_fit_grid_opt_but)
+
+        ttk.Button(main, text="Set", command=lambda: main.destroy()).grid(column=1, **my_fit_grid_opt_but)
+
+    @staticmethod
+    def my_run_stats():
+        y = [1, 4, 1, 3, 2, 17, 15, 14, 15, 1, 15, 14]
+
+        my_stat = Stats.t_test(y, 10)
+        print(my_stat)
 
     def my_custom_eq(self):
         # open window
@@ -617,7 +660,7 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
             self.frame.file_menu.add_command(label="Export", command=lambda: self.save_plot())
             self.frame.menu_bar.add_cascade(label="File", menu=self.frame.file_menu)
             self.frame.window.config(menu=self.frame.menu_bar)
-            MyGraph(self.frame)
+            MySettings.the_graphs.append(MyGraph(self.frame))
 
     def edit_picture(self):
         MySettings.graph_settings["interactive"].set(1)
@@ -627,14 +670,15 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
         try:  # attempt to save the image based on the following data formats
             files = [('All Files', '*.*'),
                      ('Python Files', '*.py'),
-
-
                      ('Text Document', '*.txt'),
                      ('Portable Image', '*.png'),
                      ('Document Image', '*.tif')]
             self.frame.save_file = asksaveasfile(filetypes=files, defaultextension=files)
-            self.figure1.savefig(self.frame.save_file.name, dpi=MySettings.graph_settings["dpi"])
+            # print(MySettings.the_graphs[0].ax1)
+            MySettings.the_graphs[0].figure1.savefig(self.frame.save_file.name,
+                                                     dpi=MySettings.graph_settings["dpi"].get())
         except AttributeError:  # return when cancel is pressed
+            print("stopped here")
             return
 
     @staticmethod
@@ -735,7 +779,9 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
     @staticmethod
     def my_about():
         tk_message_box.showinfo("About",
-                                "This program was made by Dr A. Doekhie. Use is purely intended for academic purposes.")
+                                "This program was made by Dr A. Doekhie."
+                                "Use is purely intended for data visualisation and statistics. "
+                                "This program comes with absolutely NO WARRANTY.")
 
     @staticmethod
     def my_help():

@@ -2,7 +2,6 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from _vars import MySettings
 import matplotlib.pyplot as plt
 from _data import Data
-from _functions import MyFunction
 
 
 class MyGraph:
@@ -148,6 +147,7 @@ class MyGraph:
 
         x_label_font = MySettings.graph_settings["x_label_font"].get()
         y_label_font = MySettings.graph_settings["y_label_font"].get()
+        l_font = MySettings.graph_settings["legend_font"].get()
         if not MySettings.graph_settings["legend_pos"].get():
             l_pos = 'best'
         else:
@@ -155,7 +155,7 @@ class MyGraph:
         if MySettings.graph_settings["show_legend"].get():
             self.ax1.legend(MySettings.graph_labels["labels"],
                             frameon=MySettings.graph_settings["legend_box"].get(),
-                            loc=l_pos)
+                            loc=l_pos, fontsize=l_font)
         self.ax1.set_xlabel(MySettings.graph_settings["x_var"].get(), fontsize=x_label_font)
         self.ax1.set_ylabel(MySettings.graph_settings["y_var"].get(), fontsize=y_label_font)
         self.ax1.minorticks_on()

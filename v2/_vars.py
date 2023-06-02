@@ -4,8 +4,14 @@ import tkinter as tk
 class MySettings:
     file_info = {}  # this is the main dictionary
     # where all imported data will be stored and JSON exported capability
+    the_graphs = []  # where generated graphs are stored in
     graph_labels = {"labels": []}  # separate dictionary with labels list for easy JSON export
     graph_settings = {}
+
+    my_stats = {
+        "t_test": {"name": "T-test",
+                   "var": "t_test"}
+    }
 
     my_fits = {
         "lin_reg": {"name": "Linear Regression",
@@ -113,12 +119,14 @@ class MySettings:
         "y_label_font": 10,
         "x_tick_size": 10,
         "y_tick_size": 10,
+        "legend_font": 10,
         "interactive": 0,
         "legend_pos": 'best',
         "show_legend": True,
         "fit_color": 'Black',
         "dpi": 96,
         "fit_alg": "trf",
+        "stats_test": None,
     }
 
     @staticmethod
@@ -163,6 +171,8 @@ class MySettings:
             "custom_par": tk.StringVar(),
             "use_data_for_fit_color": tk.BooleanVar(),
             "fit_alg": tk.StringVar(),
+            "legend_font": tk.IntVar(),
+            "stats_test": tk.StringVar(),
         }
 
         MySettings.anno_opt = {
