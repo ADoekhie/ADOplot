@@ -24,7 +24,7 @@ class MyFile:
             self.extension = self.filename.split('.')
             self.ext = self.extension[1]
         self.data, self.spectra, self.x, self.y = None, None, None, None
-        self.x_err, self.y_err = None, None
+        self.x_err, self.y_err = [], []
         self.identifier, self.length, self.name = None, None, None
 
     def run_all(self):

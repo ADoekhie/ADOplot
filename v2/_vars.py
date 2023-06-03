@@ -67,7 +67,7 @@ class MySettings:
                           "pady": 10,
                           }
     grid_pad = {"padx": 10, "pady": 5, "ipady": 5}
-    grid_pad_file = {"padx": 10, "pady": 5, "sticky": "w"}
+    grid_pad_file = {"padx": 2.5, "pady": 2.5, "sticky": "w"}
     grid_frame_opt = {
         "sticky": "nsew",
         "ipady": 5,

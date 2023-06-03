@@ -15,6 +15,9 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
         # window frame settings
         self.file_info = MySettings.file_info
         MySettings.set_var()
+        self.graph_set = MySettings.graph_settings
+        self.graph_lab = MySettings.graph_labels
+        self.ann = MySettings.annos
         self.original_dpi = 143.858407079646
         self.dpi = self.winfo_fpixels('1i')
         self.scale = self.dpi / self.original_dpi
@@ -29,6 +32,7 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
         self.my_line_colors = ['Black', 'Blue', 'Green', 'Red', 'Cyan', 'Magenta', 'Yellow', 'White']
         self.columnconfigure((0, 20), weight=1)
         self.par = {}
+        self.error_message = ""
 
         self.title('ADO plot')
         # You can set the geometry attribute to change the root ado_plots size
@@ -45,7 +49,7 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
         self.tab_stats = ttk.Frame(self.tab_main)
         self.tab_main.add(self.tab_data, text='Data')
         self.tab_main.add(self.tab_graph, text='Graph')
-        self.tab_main.add(self.tab_stats, text='Stats')
+        # self.tab_main.add(self.tab_stats, text='Stats')
         # self.tab_main.add(self.tab_script, text='Script')
         self.tab_main.grid()
         self.graph = MySettings.graph_settings
@@ -72,13 +76,13 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
         self.spacer(self.tab_graph, 1, 7)
 
         # tab stats labelframe and grid
-        self.spacer(self.tab_stats, 1, 1)
-        self.tab_stats_ls = tk.LabelFrame(self.tab_stats, text="Statistics")
-        self.tab_stats_ls.grid(row=1, column=2, **MySettings.grid_frame_opt)
+        # self.spacer(self.tab_stats, 1, 1)
+        # self.tab_stats_ls = tk.LabelFrame(self.tab_stats, text="Statistics")
+        # self.tab_stats_ls.grid(row=1, column=2, **MySettings.grid_frame_opt)
 
-        self.spacer(self.tab_stats, 1, 3)
-        self.tab_stats_md = tk.LabelFrame(self.tab_stats, text="Description")
-        self.tab_stats_md.grid(row=1, column=4, **MySettings.grid_frame_opt)
+        # self.spacer(self.tab_stats, 1, 3)
+        # self.tab_stats_md = tk.LabelFrame(self.tab_stats, text="Description")
+        # self.tab_stats_md.grid(row=1, column=4, **MySettings.grid_frame_opt)
 
         # invoke all options
         self.my_tabs()
@@ -99,8 +103,8 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
             10: {"loc": self.tab_graph_ls, "text": "Annotate", "cm": self.my_annotate, "y": 5},
             11: {"loc": self.tab_graph_rs1, "text": "Set Figure", "cm": self.my_figure_size, "y": 4},
             12: {"loc": self.tab_graph_rs1, "text": "Edit Figure", "cm": self.edit_picture, "y": 5},
-            13: {"loc": self.tab_stats_ls, "text": "Choose test", "cm": self.my_stats, "y": 1},
-            14: {"loc": self.tab_stats_ls, "text": "Run test", "cm": self.my_run_stats, "y": 2},
+            # 13: {"loc": self.tab_stats_ls, "text": "Choose test", "cm": self.my_stats, "y": 1},
+            # 14: {"loc": self.tab_stats_ls, "text": "Run test", "cm": self.my_run_stats, "y": 2},
         }
         for t in tabs:
             self.my_button(loc=tabs[t]["loc"], text=tabs[t]["text"], cm=tabs[t]["cm"], y=tabs[t]["y"])
@@ -116,10 +120,12 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
     def my_file_header(self):  # Header row for loaded files
         loc = self.tab_data_rs
         opt = MySettings.grid_pad_file
-        tk.Canvas(loc, bg="#ccc", height=2, width=450).grid(row=0, column=1, columnspan=5, pady=5, padx=10)
+        # tk.Canvas(loc, bg="#ccc", height=2, width=450).grid(row=0, column=1, columnspan=5, pady=5, padx=10)
+        tk.Canvas(loc, bg="#ccc", height=2).grid(row=0, column=1, columnspan=5, pady=2.5, padx=2.5)
         ttk.Label(loc, text="#").grid(row=1, column=1, **opt)
-        ttk.Label(loc, text="File:").grid(row=1, column=2, **opt)
-        ttk.Label(loc, text="Properties:").grid(row=1, column=3, **opt)
+        ttk.Label(loc, text="File \t").grid(row=1, column=2, **opt)
+        ttk.Label(loc, text="Properties").grid(row=1, column=3, **opt)
+        tk.Canvas(loc, bg="#ccc", height=2).grid(row=2, column=1, columnspan=5, pady=2.5, padx=2.5)
 
     @staticmethod
     def spacer(lc, r, c):
@@ -150,16 +156,16 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
                 plc = self.tab_data_rs
                 d = my_file
                 cms = [self.my_properties, self.show_data, self.relist_my_dataset]
-                grid_opt = {"padx": 10, "pady": 5}
-                grid_opt_b = {"sticky": "w", "padx": 10, "pady": 5}
+                grid_opt = {"sticky": "w", "padx": 2.5, "pady": 5}
+                grid_opt_b = {"sticky": "w", "padx": 2.5, "pady": 5}
                 ttk.Checkbutton(plc, offvalue="no", onvalue="yes", variable=MySettings.file_info[d]["active"],
-                                state=NORMAL).grid(row=b, column=1, sticky="w", **grid_opt)
-                ttk.Label(plc, text=MySettings.file_info[my_file]["name"]).grid(row=b, column=2, sticky="w", **grid_opt)
+                                state=NORMAL).grid(row=b, column=1, **grid_opt)
+                ttk.Label(plc, text=MySettings.file_info[my_file]["name"]).grid(row=b, column=2, **grid_opt)
                 ttk.Button(plc, text="Set", command=lambda: cms[0](d)).grid(row=b, column=3, **grid_opt_b)
                 ttk.Button(plc, text="View Data", command=lambda: cms[1](d)).grid(row=b, column=4, **grid_opt_b)
                 ttk.Button(plc, text="Delete", command=lambda: cms[2](d)).grid(row=b, column=5, **grid_opt_b)
 
-            ab = 2
+            ab = 3
             for my_file1 in MySettings.file_info:
                 place_buttons(my_file1, ab)
                 ab += 1
@@ -228,23 +234,30 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
         for head in text_col:
             self.frame.text.insert(INSERT, head)
 
+        # print((MySettings.file_info[file]["y_error"]))
+        # print((MySettings.file_info[file]["x_error"]))
+
         for x in range(len(MySettings.file_info[file]["x_data"])):
             self.frame.text.insert(INSERT, MySettings.file_info[file]["x_data"][x])
             self.frame.text.insert(INSERT, "\t")
             self.frame.text.insert(INSERT, MySettings.file_info[file]["y_data"][x])
             self.frame.text.insert(INSERT, "\t")
-            try:
-                self.frame.text.insert(INSERT, MySettings.file_info[file]["y_error"][x])
-                self.frame.text.insert(INSERT, "\t")
-            except IndexError or TypeError:
-                self.frame.text.insert(INSERT, "\t")
-                pass
-            try:
-                self.frame.text.insert(INSERT, MySettings.file_info[file]["x_error"][x])
-                self.frame.text.insert(INSERT, "\t")
-            except IndexError or TypeError:
-                self.frame.text.insert(INSERT, "\t")
-                pass
+            if len(MySettings.file_info[file]["y_error"]) > 0:
+                try:
+                    self.frame.text.insert(INSERT, MySettings.file_info[file]["y_error"][x])
+                    self.frame.text.insert(INSERT, "\t")
+                except IndexError or TypeError as error_message:
+                    self.my_debug(str(error_message))
+                    self.frame.text.insert(INSERT, "\t")
+                    pass
+            if len(MySettings.file_info[file]["x_error"]) > 0:
+                try:
+                    self.frame.text.insert(INSERT, MySettings.file_info[file]["x_error"][x])
+                    self.frame.text.insert(INSERT, "\t")
+                except IndexError or TypeError as error_message:
+                    self.my_debug(str(error_message))
+                    self.frame.text.insert(INSERT, "\t")
+                    pass
             self.frame.text.insert(INSERT, "\n")
 
         self.frame.text.grid(row=1, column=1)
@@ -322,21 +335,24 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
 
         if MySettings.graph_settings["fit"]:
             self.frame.dcolor = tk.LabelFrame(self.frame.window, text="fit color", **lab_opt)
-            self.frame.dcolor.grid(row=1, column=2, **kw)
+            self.frame.dcolor.grid(row=0, column=2, **kw)
             ttk.Checkbutton(self.frame.dcolor, onvalue=True, offvalue=False,
                             variable=fym["use_data_for_fit_color"]).grid(column=2, **kw_c)
 
-        for err, err_bar, r in zip(["y_error", "x_error"], ["y_error_bar", "x_error_bar"], [0, 1]):
-            if fym[err]:
-                self.frame.err = tk.LabelFrame(self.frame.window, text=err + "bars", **lab_opt)
-                ser = self.frame.err
-                ser.grid(row=r, column=2, **kw)
-                ttk.Checkbutton(ser, onvalue=1, offvalue=0, variable=fym[err_bar]).grid(row=1, column=1, **kw_c)
-                ttk.Label(ser, text="Cap Size").grid(row=1, column=2, **kw)
-                ttk.Entry(ser, textvariable=fym["cap_size"], width=2).grid(row=1, column=3, **kw_c)
-            else:
+        for err, err_bar, r in zip(["y_error", "x_error"], ["y_error_bar", "x_error_bar"], [1, 2]):
+            try:
+                if len(fym[err]) > 0:
+                    self.frame.err = tk.LabelFrame(self.frame.window, text=err + " bars", **lab_opt)
+                    ser = self.frame.err
+                    ser.grid(row=r, column=2, **kw)
+                    ttk.Checkbutton(ser, onvalue=1, offvalue=0, variable=fym[err_bar]).grid(row=1, column=1, **kw_c)
+                    ttk.Label(ser, text="Cap Size").grid(row=1, column=2, **kw)
+                    ttk.Entry(ser, textvariable=fym["cap_size"], width=2).grid(row=1, column=3, **kw_c)
+
+            except ValueError:
                 pass
-        if MySettings.file_info[my_file]["x_error"] or MySettings.file_info[my_file]["y_error"]:
+
+        if len(MySettings.file_info[my_file]["x_error"]) > 0 or len(MySettings.file_info[my_file]["y_error"]) > 0:
             self.frame.err = tk.LabelFrame(self.frame.window, text="Error Bar Color", **lab_opt)
             self.frame.err.grid(row=2, column=2, **kw)
             # set colors in labelframe
@@ -675,49 +691,52 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
                      ('Document Image', '*.tif')]
             self.frame.save_file = asksaveasfile(filetypes=files, defaultextension=files)
             # print(MySettings.the_graphs[0].ax1)
-            MySettings.the_graphs[0].figure1.savefig(self.frame.save_file.name,
-                                                     dpi=MySettings.graph_settings["dpi"].get())
-        except AttributeError:  # return when cancel is pressed
-            print("stopped here")
+            MySettings.the_graphs[-1].figure1.savefig(self.frame.save_file.name,
+                                                      dpi=MySettings.graph_settings["dpi"].get())
+        except AttributeError as error_message:  # return when cancel is pressed
+            self.my_debug(error_message)
             return
 
-    @staticmethod
-    def load_config():
-        x = askopenfilename()  # open directory file dialog and select one config file
-        split_file_string = x.split('.')  # parse the file string
-        file_ext = split_file_string[1]  # extract the extension
-        if file_ext == 'cfg':  # check if the file extension matches the config file format
-            f = open(x)  # open the config file
-            f_first_line = f.readline()  # read the first line dictionary string
-            f_info = json.loads(f_first_line)  # parse the JSON string into a dict
-            y = f_info  # use short variable for loop
-            for fl in f_info:  # for each file name
-                MyFile(fl).run_cfg()  # create an instance with tk.StringVars so we can edit the loaded config
-                for k, v in y[fl].items():  # run through each subsequent key and value
-                    try:
-                        if k in MySettings.file_info[fl]:  # if the key already exists then set the vakue
-                            MySettings.file_info[fl][k].set(v)
-                        else:  # if it doesnt exist then try to create the key and set the type for the key before
-                            # adding in the actual value
-                            try:
-                                MySettings.file_info[fl][k] = type(v)  # set the type
-                                MySettings.file_info[fl][k].set(v)  # set the value(s)
-                            except AttributeError:  # unless there is an attribute error
-                                MySettings.file_info[fl][k] = v  # accept the value as is
-                    except AttributeError:  # unless there is an attribute error
-                        MySettings.file_info[fl][k] = v  # accept the value as is
+    def load_config(self):
+        try:
+            x = askopenfilename()  # open directory file dialog and select one config file
+            split_file_string = x.split('.')  # parse the file string
+            file_ext = split_file_string[1]  # extract the extension
+            if file_ext == 'cfg':  # check if the file extension matches the config file format
+                f = open(x)  # open the config file
+                f_first_line = f.readline()  # read the first line dictionary string
+                f_info = json.loads(f_first_line)  # parse the JSON string into a dict
+                y = f_info  # use short variable for loop
+                for fl in f_info:  # for each file name
+                    MyFile(fl).run_cfg()  # create an instance with tk.StringVars so we can edit the loaded config
+                    for k, v in y[fl].items():  # run through each subsequent key and value
+                        try:
+                            if k in MySettings.file_info[fl]:  # if the key already exists then set the vakue
+                                MySettings.file_info[fl][k].set(v)
+                            else:  # if it doesnt exist then try to create the key and set the type for the key before
+                                # adding in the actual value
+                                try:
+                                    MySettings.file_info[fl][k] = type(v)  # set the type
+                                    MySettings.file_info[fl][k].set(v)  # set the value(s)
+                                except AttributeError:  # unless there is an attribute error
+                                    MySettings.file_info[fl][k] = v  # accept the value as is
+                        except AttributeError:  # unless there is an attribute error
+                            MySettings.file_info[fl][k] = v  # accept the value as is
 
-            f_second_line = f.readline()
-            y = json.loads(f_second_line)
-            for d, v in y.items():
-                try:
-                    MySettings.graph_settings[d].set(v)
-                except AttributeError:
-                    MySettings.graph_settings[d] = v
-            f.close()  # close the config file
-        else:
-            tk_message_box.showerror("File error", "Please load a .cfg config file format.")
-        print(MySettings.file_info)
+                f_second_line = f.readline()
+                y = json.loads(f_second_line)
+                for d, v in y.items():
+                    try:
+                        MySettings.graph_settings[d].set(v)
+                    except AttributeError:
+                        MySettings.graph_settings[d] = v
+                f.close()  # close the config file
+                self.list_my_dataset()
+            else:
+                tk_message_box.showerror("File error", "Please load a .cfg config file format.")
+            # print(MySettings.file_info)
+        except IndexError:
+            return
 
     def save_config(self):
         data = [('adoconf (*.cfg)', '*.cfg')]
@@ -741,12 +760,23 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
                             if isinstance(v, type(n64)) or isinstance(v, type(n32)) or isinstance(v, type(nda)):
                                 data_store[info][d] = v.tolist()
                             if isinstance(v, type(test)) or isinstance(v, type(test3)):
-                                data_store[info][d] = v
+                                data_store[info][d] = v.get()
                             if isinstance(v, type(test2)):
                                 data_store[info][d] = v
                         except AttributeError:
                             data_store[info][d] = v
-            if my_data == MySettings.graph_settings or self.annos:
+            if my_data == MySettings.graph_settings:
+                for d, v in my_data.items():
+                    try:
+                        if isinstance(v, type(n64)) or isinstance(v, type(n32)) or isinstance(v, type(nda)):
+                            data_store[d] = v.tolist()
+                        if isinstance(v, type(test)) or isinstance(v, type(test3)):
+                            data_store[d] = v.get()
+                        if isinstance(v, type(test2)):
+                            data_store[d] = v
+                    except AttributeError:
+                        data_store[d] = v
+            if my_data == MySettings.annos:
                 for d, v in my_data.items():
                     try:
                         data_store[d] = v
@@ -757,12 +787,16 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
             return data_store
 
         # Store data in a .cfg file based on the list variables processed using the dict_json function
-        if x.name and x.name is not None:
-            f = open(x.name, "w")
-            to_save = [MySettings.file_info, MySettings.graph_settings, MySettings.graph_labels, self.annos]
-            for dm in to_save:
-                f.write(json.dumps(dict_json(dm)) + "\n")
-            f.close()
+        try:
+            if x.name and x.name is not None:
+                f = open(x.name, "w")
+                to_save = [self.file_info, self.graph_set, self.graph_lab, self.ann]
+                for dm in to_save:
+                    f.write(json.dumps(dict_json(dm)) + "\n")
+                    #  print(dict_json(dm))
+                f.close()
+        except AttributeError:
+            return
 
     def my_import(self):
         Import()
@@ -793,6 +827,10 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
                                 "In the graph tab you can plot the data and optimise the plot format.\n\n"
                                 "Advanced fitting options are present for use but limited at this stage.\n\n"
                                 "Please request more functionality on the GitHub page.\n")
+
+    @staticmethod
+    def my_debug(message):
+        tk_message_box.showerror("error", message)
 
 
 if __name__ == '__main__':

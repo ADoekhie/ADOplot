@@ -59,7 +59,7 @@ class MyFunction:
         if use_fit_color.get() is True:
             MySettings.graph_settings["fit_color"].set(mfl["color"].get())
 
-        print(use_fit_color.get(), MySettings.graph_settings["fit_color"].get(), mfl["color"].get())
+        # print(use_fit_color.get(), MySettings.graph_settings["fit_color"].get(), mfl["color"].get())
 
         # set shortcute variable and bounds
         mfl2 = mfl[self.type]
@@ -102,6 +102,7 @@ class MyFunction:
             ss_res = np.sum(residuals ** 2)
             ss_tot = np.sum((data_y - np.mean(data_y)) ** 2)
             r_squared = 1 - (ss_res / ss_tot)
+            mfl2["r_squared"] = r_squared
 
             # make the labels
             p1 = func_lab[self.type]["p"] % tuple(mfl2["p_opt"])
@@ -147,7 +148,7 @@ class MyFunction:
 
         try:
             the_eq = 'def func(' + par + '):\n    return ' + equ + ''  # parse the inputted equation using exec
-            print(the_eq)
+            # print(the_eq)
             exec(the_eq, globals())  # make the custom equation globally available
         except TypeError:
             return

@@ -2,6 +2,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from _vars import MySettings
 import matplotlib.pyplot as plt
 from _data import Data
+from _functions import MyFunction
 
 
 class MyGraph:
@@ -10,7 +11,7 @@ class MyGraph:
         self.frame = window
         # create canvas
         if MySettings.graph_settings["interactive"] == 1:  # if MySettings.graph_settings["interactive"] == 1:
-            print("code reached")
+            # print("code reached")
             plt.ion()
 
         self.figure1 = plt.Figure(figsize=(MySettings.graph_settings["figure_width"].get(),
@@ -50,9 +51,9 @@ class MyGraph:
                 if p_mode != "Bar":
                     plotting_mode[p_mode]["type"](x, y, **plotting_mode[p_mode]["params"])
                 if p_mode == "Line":
-                    if MySettings.graph_settings["x_scale"] != 'reverse':
+                    if MySettings.graph_settings["x_scale"].get() != 'reverse':
                         self.ax1.set_xscale(MySettings.graph_settings["x_scale"].get())
-                    if MySettings.graph_settings["y_scale"] != 'reverse':
+                    if MySettings.graph_settings["y_scale"].get() != 'reverse':
                         self.ax1.set_yscale(MySettings.graph_settings["y_scale"].get())
                 if p_mode == "Bar":
                     width = 0.35
@@ -61,29 +62,32 @@ class MyGraph:
                     else:
                         self.ax1.bar(x - width / 2, y, width=width, label=my_file)
                         MySettings.graph_settings["bar"].set(1)
+
+                error_bar_opt = {
+                    "c": color,
+                    "ecolor": MySettings.file_info[my_file]["error_color"].get(),
+                    "linestyle": "none",
+                    "capsize": data["cap_size"].get(),
+                    "marker": m_style,
+                    "barsabove": False,
+                }
+
+                if data["y_error_bar"].get() == 1 and data["x_error_bar"].get() == 0:
+                    y_error = data["y_error"]
+                    self.ax1.errorbar(x, y, yerr=y_error, **error_bar_opt)
+                if data["x_error_bar"].get() == 1 and data["y_error_bar"].get() == 0:
+                    x_error = data["x_error"]
+                    self.ax1.errorbar(x, y, xerr=x_error, **error_bar_opt)
+                if data["y_error_bar"].get() == 1 and data["x_error_bar"].get() == 1:
+                    y_error = data["y_error"]
+                    x_error = data["x_error"]
+                    self.ax1.errorbar(x, y, yerr=y_error, xerr=x_error, **error_bar_opt)
+
                 if MySettings.graph_settings["fit"].get():
                     f_mode = MySettings.graph_settings["fit"].get()
                     mode = "" + MySettings.my_fits[f_mode]["mode"] + "('" + my_file + "')"
                     exec(mode)
 
-                error_bar_opt = {
-                    "c": color,
-                    "ecolor": MySettings.file_info[my_file]["error_color"],
-                    "linestyle": "none",
-                    "capsize": data["cap_size"],
-                    "marker": m_style,
-                    "barsabove": False,
-                }
-                if data["y_error_bar"].get() == 1 and data["x_error_bar"] == 0:
-                    y_error = data["y_error"]
-                    self.ax1.errorbar(x, y, yerr=y_error, **error_bar_opt)
-                if data["x_error_bar"].get() == 1 and data["y_error_bar"] == 0:
-                    x_error = data["x_error"]
-                    self.ax1.errorbar(x, y, xerr=x_error, **error_bar_opt)
-                if data["y_error_bar"].get() == 1 and data["x_error_bar"] == 1:
-                    y_error = data["y_error"]
-                    x_error = data["x_error"]
-                    self.ax1.errorbar(x, y, yerr=y_error, xerr=x_error, **error_bar_opt)
                 if len(MySettings.annos) > 0:
                     for ent in MySettings.annos:
                         text = MySettings.annos[ent]["title"].get()
@@ -98,6 +102,7 @@ class MyGraph:
                             self.ax1.annotate(text=text, xy=xy, xytext=xy_text, arrowprops={'arrowstyle': '->'})
                         else:
                             self.ax1.annotate(text=text, xy=xy)
+
             else:
                 return
 
