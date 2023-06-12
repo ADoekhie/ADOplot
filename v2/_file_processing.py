@@ -172,6 +172,7 @@ class MyFile:
             MySettings.file_info[self.filename + str(a)] = {
                 "color": tk.StringVar(),
                 "legend": tk.StringVar(),
+                "use_legend": tk.BooleanVar(),
                 "x_data": self.x,
                 "y_data": self.y,
                 "name": self.name + "-col " + str(a),
@@ -208,6 +209,7 @@ class MyFile:
                 "line_style": "solid",
                 "marker": "none",
                 "use_data_for_fit_color": False,
+                "use_legend": True,
             }
 
             for var1 in default_var:

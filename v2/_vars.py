@@ -8,6 +8,9 @@ class MySettings:
     graph_labels = {"labels": []}  # separate dictionary with labels list for easy JSON export
     graph_settings = {}
 
+    line_colors = ['Black', 'Blue', 'Green', 'Red', 'Cyan', 'Magenta', 'Yellow', 'White', 'Grey', 'Brown', 'Orange',
+                   'Gold', 'Olive', 'Lime', 'Teal', 'Lightblue', 'Navy', 'Indigo', 'Purple', 'Crimson']
+
     my_stats = {
         "t_test": {"name": "T-test",
                    "var": "t_test"}

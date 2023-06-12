@@ -31,7 +31,10 @@ class MyGraph:
             # print(data)
 
             if data["active"].get() == 'yes':
-                MySettings.graph_labels["labels"].append(data["legend"].get())
+                if data["use_legend"].get():
+                    MySettings.graph_labels["labels"].append(data["legend"].get())
+                else:
+                    MySettings.graph_labels["labels"].append("_")
                 x = data["x_data"]
                 y = data["y_data"]
                 color = data["color"].get()

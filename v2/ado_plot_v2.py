@@ -29,7 +29,7 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
         self.y_margin = (self.screen_height - self.h) / 2
         self.x_margin_pop = (self.screen_width - self.w) / 1.5
         self.y_margin_pop = (self.screen_height - self.h) / 1.5
-        self.my_line_colors = ['Black', 'Blue', 'Green', 'Red', 'Cyan', 'Magenta', 'Yellow', 'White']
+        self.my_line_colors = MySettings.line_colors
         self.par = {}
         self.error_message = ""
         self.title('ADO plot')
@@ -489,6 +489,8 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
             data = MySettings.file_info[item]
             ttk.Label(my_leg, text=data["name"]).grid(row=a, column=1, **grid_opt_but)
             ttk.Entry(my_leg, textvariable=data["legend"]).grid(row=a, column=2, **grid_opt_but)
+            ttk.Checkbutton(my_leg, text="Display", onvalue=True, offvalue=False,
+                            variable=data["use_legend"]).grid(row=a, column=3, **grid_opt_but)
             a += 1
 
         # Another label frame to hold legend options
