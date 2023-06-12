@@ -72,6 +72,7 @@ class MySettings:
         "sticky": "nsew",
         "ipady": 5,
         "pady": 15,
+        "padx": 10,
     }
     grid_frame_opt_lab = {
         "sticky": "w",

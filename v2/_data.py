@@ -57,8 +57,8 @@ class Data:
 
             for m_max in minmax_list:
                 if minmax_list[m_max]["name"] >= 0:
-                    minmax_list[m_max]["var"].set(int(minmax_list[m_max]["name"] * minmax_list[m_max]["factor1"]))
+                    minmax_list[m_max]["var"].set(float(minmax_list[m_max]["name"] * minmax_list[m_max]["factor1"]))
                 elif minmax_list[m_max]["name"] <= 0:
-                    minmax_list[m_max]["var"].set(int(minmax_list[m_max]["name"] * minmax_list[m_max]["factor2"]))
+                    minmax_list[m_max]["var"].set(float(minmax_list[m_max]["name"] * minmax_list[m_max]["factor2"]))
                 else:
                     return

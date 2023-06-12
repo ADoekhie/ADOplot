@@ -30,10 +30,8 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
         self.x_margin_pop = (self.screen_width - self.w) / 1.5
         self.y_margin_pop = (self.screen_height - self.h) / 1.5
         self.my_line_colors = ['Black', 'Blue', 'Green', 'Red', 'Cyan', 'Magenta', 'Yellow', 'White']
-        self.columnconfigure((0, 20), weight=1)
         self.par = {}
         self.error_message = ""
-
         self.title('ADO plot')
         # You can set the geometry attribute to change the root ado_plots size
         self.geometry("+%d+%d" % (self.x_margin, self.y_margin))  # You want the size of the app to be 500x500
@@ -55,25 +53,26 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
         self.graph = MySettings.graph_settings
 
         # tab data labelframe and grid
-        self.spacer(self.tab_data, 1, 1)
+        # self.spacer(self.tab_data, 1, 1)
         self.tab_data_ls = tk.LabelFrame(self.tab_data, text="Options")
-        self.tab_data_ls.grid(row=1, column=2, **MySettings.grid_frame_opt)
-        self.spacer(self.tab_data, 1, 3)
+        self.tab_data_ls.grid(row=1, column=0, **MySettings.grid_frame_opt)
+        # self.spacer(self.tab_data, 1, 3)
         self.tab_data_rs = tk.LabelFrame(self.tab_data, text="Data View")
-        self.tab_data_rs.grid(row=1, column=4, **MySettings.grid_frame_opt)
-        self.spacer(self.tab_data, 1, 5)
+        self.tab_data_rs.grid(row=1, column=1, columnspan=3, **MySettings.grid_frame_opt)
+        # self.spacer(self.tab_data, 1, 5)
+        self.tab_data.grid_columnconfigure(0, weight=1, uniform="u")
 
         # tab graph labelframe and grid
-        self.spacer(self.tab_graph, 1, 1)
+        # self.spacer(self.tab_graph, 1, 1)
         self.tab_graph_ls = tk.LabelFrame(self.tab_graph, text="Options")
-        self.tab_graph_ls.grid(row=1, column=2, **MySettings.grid_frame_opt)
-        self.spacer(self.tab_graph, 1, 3)
+        self.tab_graph_ls.grid(row=1, column=0, **MySettings.grid_frame_opt)
+        # self.spacer(self.tab_graph, 1, 3)
         self.tab_graph_rs = tk.LabelFrame(self.tab_graph, text="Graph Labels")
-        self.tab_graph_rs.grid(row=1, column=4, **MySettings.grid_frame_opt)
-        self.spacer(self.tab_graph, 1, 5)
+        self.tab_graph_rs.grid(row=1, column=1, columnspan=3, **MySettings.grid_frame_opt)
+        # self.spacer(self.tab_graph, 1, 5)
         self.tab_graph_rs1 = tk.LabelFrame(self.tab_graph, text="Advanced")
-        self.tab_graph_rs1.grid(row=1, column=6, **MySettings.grid_frame_opt)
-        self.spacer(self.tab_graph, 1, 7)
+        self.tab_graph_rs1.grid(row=1, column=4, **MySettings.grid_frame_opt)
+        # self.spacer(self.tab_graph, 1, 7)
 
         # tab stats labelframe and grid
         # self.spacer(self.tab_stats, 1, 1)
@@ -91,8 +90,8 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
 
     def my_tabs(self):
         tabs = {  # tab data buttons
-            1: {"loc": self.tab_data_ls, "text": "Load File(s)", "cm": self.my_import, "y": 1},
-            2: {"loc": self.tab_data_ls, "text": "New Dataset", "cm": self.my_new_file, "y": 2},
+            1: {"loc": self.tab_data_ls, "text": "Load File(s)", "cm": self.my_import, "y": 1, "cst": 5},
+            2: {"loc": self.tab_data_ls, "text": "New Dataset", "cm": self.my_new_dataset, "y": 2, "cst": 2},
             3: {"loc": self.tab_graph_ls, "text": "Plot Graph", "cm": self.plot, "y": 1},
             4: {"loc": self.tab_graph_ls, "text": "Set Type", "cm": self.graph_type, "y": 2},
             5: {"loc": self.tab_graph_ls, "text": "Set X/Y", "cm": self.x_y, "y": 3},
@@ -107,7 +106,13 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
             # 14: {"loc": self.tab_stats_ls, "text": "Run test", "cm": self.my_run_stats, "y": 2},
         }
         for t in tabs:
-            self.my_button(loc=tabs[t]["loc"], text=tabs[t]["text"], cm=tabs[t]["cm"], y=tabs[t]["y"])
+            try:
+                self.my_button(loc=tabs[t]["loc"], text=tabs[t]["text"], cm=tabs[t]["cm"], y=tabs[t]["y"],
+                               columnspan=tabs[t]["cst"])
+            except KeyError:
+                self.my_button(loc=tabs[t]["loc"], text=tabs[t]["text"], cm=tabs[t]["cm"], y=tabs[t]["y"])
+
+        self.tab_graph_ls.grid_columnconfigure(0, weight=1, uniform="u")
 
         # label entries for graph
         ttk.Label(self.tab_graph_rs, text="X-Label:").grid(row=1, column=1, **MySettings.grid_frame_opt_lab)
@@ -121,11 +126,11 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
         loc = self.tab_data_rs
         opt = MySettings.grid_pad_file
         # tk.Canvas(loc, bg="#ccc", height=2, width=450).grid(row=0, column=1, columnspan=5, pady=5, padx=10)
-        tk.Canvas(loc, bg="#ccc", height=2).grid(row=0, column=1, columnspan=5, pady=2.5, padx=2.5)
-        ttk.Label(loc, text="#").grid(row=1, column=1, **opt)
-        ttk.Label(loc, text="File \t").grid(row=1, column=2, **opt)
-        ttk.Label(loc, text="Properties").grid(row=1, column=3, **opt)
-        tk.Canvas(loc, bg="#ccc", height=2).grid(row=2, column=1, columnspan=5, pady=2.5, padx=2.5)
+        tk.Canvas(loc, bg="#ccc", height=2).grid(row=0, column=0, columnspan=5, pady=2.5, padx=2.5)
+        ttk.Label(loc, text="#").grid(row=1, column=0, **opt)
+        ttk.Label(loc, text="File \t").grid(row=1, column=1, **opt)
+        ttk.Label(loc, text="Properties").grid(row=1, column=2, **opt)
+        tk.Canvas(loc, bg="#ccc", height=2).grid(row=2, column=0, columnspan=5, pady=2.5, padx=2.5)
 
     @staticmethod
     def spacer(lc, r, c):
@@ -159,11 +164,11 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
                 grid_opt = {"sticky": "w", "padx": 2.5, "pady": 5}
                 grid_opt_b = {"sticky": "w", "padx": 2.5, "pady": 5}
                 ttk.Checkbutton(plc, offvalue="no", onvalue="yes", variable=MySettings.file_info[d]["active"],
-                                state=NORMAL).grid(row=b, column=1, **grid_opt)
-                ttk.Label(plc, text=MySettings.file_info[my_file]["name"]).grid(row=b, column=2, **grid_opt)
-                ttk.Button(plc, text="Set", command=lambda: cms[0](d)).grid(row=b, column=3, **grid_opt_b)
-                ttk.Button(plc, text="View Data", command=lambda: cms[1](d)).grid(row=b, column=4, **grid_opt_b)
-                ttk.Button(plc, text="Delete", command=lambda: cms[2](d)).grid(row=b, column=5, **grid_opt_b)
+                                state=NORMAL).grid(row=b, column=0, **grid_opt)
+                ttk.Label(plc, text=MySettings.file_info[my_file]["name"]).grid(row=b, column=1, **grid_opt)
+                ttk.Button(plc, text="Set", command=lambda: cms[0](d)).grid(row=b, column=2, **grid_opt_b)
+                ttk.Button(plc, text="View Data", command=lambda: cms[1](d)).grid(row=b, column=3, **grid_opt_b)
+                ttk.Button(plc, text="Delete", command=lambda: cms[2](d)).grid(row=b, column=4, **grid_opt_b)
 
             ab = 3
             for my_file1 in MySettings.file_info:
@@ -178,9 +183,9 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
         self.list_my_dataset()
 
     @staticmethod
-    def my_button(loc, text, y, cm, x=1):
+    def my_button(loc, text, cm, y, x=1, **columnspan):
         _ = ttk.Button(master=loc, text=text, command=cm)
-        _.grid(row=y, column=x, **MySettings.grid_pad, sticky="nsew")
+        _.grid(row=y, column=x, **MySettings.grid_pad, sticky="nsew", **columnspan)
         return _
 
     def menu(self):  # Top window menu call function
@@ -354,7 +359,7 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
 
         if len(MySettings.file_info[my_file]["x_error"]) > 0 or len(MySettings.file_info[my_file]["y_error"]) > 0:
             self.frame.err = tk.LabelFrame(self.frame.window, text="Error Bar Color", **lab_opt)
-            self.frame.err.grid(row=2, column=2, **kw)
+            self.frame.err.grid(row=4, column=2, **kw)
             # set colors in labelframe
             ttk.Combobox(self.frame.err, state="readonly", values=self.my_line_colors, justify="left",
                          textvariable=fym["error_color"], width=10).grid(row=2, column=1, columnspan=3, **kw_c)
@@ -482,8 +487,8 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
         a = 1
         for item in MySettings.file_info:
             data = MySettings.file_info[item]
-            ttk.Label(my_leg, text=data["name"]).grid(row=a, column=1)
-            ttk.Entry(my_leg, textvariable=data["legend"]).grid(row=a, column=2)
+            ttk.Label(my_leg, text=data["name"]).grid(row=a, column=1, **grid_opt_but)
+            ttk.Entry(my_leg, textvariable=data["legend"]).grid(row=a, column=2, **grid_opt_but)
             a += 1
 
         # Another label frame to hold legend options
@@ -802,7 +807,7 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
         Import()
         self.list_my_dataset()
 
-    def my_new_file(self):
+    def my_new_dataset(self):
         NewFile()
         self.list_my_dataset()
 

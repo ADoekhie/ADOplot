@@ -25,17 +25,19 @@ class MyFile:
             self.ext = self.extension[1]
         self.data, self.spectra, self.x, self.y = None, None, None, None
         self.x_err, self.y_err = [], []
+        self.data_val = {}
+        self.multi = False
         self.identifier, self.length, self.name = None, None, None
 
     def run_all(self):
         if self.process_file():
             self.file_type()
             self.file_id()
-            self.set_var()
+            self.set_var(self)
 
     def run_cfg(self):
         self.file_id()
-        self.set_var()
+        self.set_var(self)
 
     def process_file(self):
         # try to process if possible and check for file type
@@ -56,33 +58,45 @@ class MyFile:
 
     def file_type(self):
         # process CSV file
-        if self.filename.find(".csv") > 0:
+        if self.filename.count(".csv") > 0:
             f = open(self.filename, "r")
             f_first = f.readline()
             alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p',
                         'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
             header = None
             for letter in alphabet:
-                if f_first.find(letter) > 0:
+                if f_first.count(letter) != 0:
                     header = 0
                     # print("found letter!") # for debugging file headers
-                    break
-                else:
-                    header = None
-            self.data = pd.read_csv(self.filename, sep=',', header=header)
-            self.spectra = self.data.values
-            self.x = self.spectra[:, 0]
-            self.y = self.spectra[:, 1]
-            try:
-                self.y_err = self.spectra[:, 2]
-            except IndexError:
-                self.y_err = []
-                return
-            try:
-                self.x_err = self.spectra[:, 3]
-            except IndexError:
-                self.x_err = []
-                return
+
+            if f_first.count(",") > 1:
+                self.data = pd.read_csv(self.filename, sep=',', header=header)
+                self.spectra = self.data.values
+                self.x = self.spectra[:, 0]
+                self.y = []
+                col = 1
+                self.multi = True
+                print("br1")
+                for c in range(1, len(self.data.columns), 1):
+                    self.data_val[c] = self.spectra[:, col]
+                    col += 1
+
+            if f_first.count(",") == 1:
+                self.data = pd.read_csv(self.filename, sep=',', header=header)
+                self.spectra = self.data.values
+                self.x = self.spectra[:, 0]
+                self.y = self.spectra[:, 1]
+                try:
+                    self.y_err = self.spectra[:, 2]
+                except IndexError:
+                    self.y_err = []
+                    return
+                try:
+                    self.x_err = self.spectra[:, 3]
+                except IndexError:
+                    self.x_err = []
+                    return
+
         # process space-spaced .dat file
         if self.filename.find(".dat") > 0:
             self.x = []
@@ -125,78 +139,99 @@ class MyFile:
         self.length = len(self.identifier)
         self.name = self.identifier[self.length - 1]
 
+    @staticmethod
     def set_var(self):
-        # convert list to ndarray
-        try:
-            if type(self.x) is list:
-                temp = np.asarray(self.x)
-                self.x = temp
-                temp = np.asarray(self.y)
-                self.y = temp
-        except TypeError:
-            return
-        # set variables in app data array MySettings.file_info
-        MySettings.file_info[self.filename] = {
-            "color": tk.StringVar(),
-            "legend": tk.StringVar(),
-            "x_data": self.x,
-            "y_data": self.y,
-            "name": self.name,
-            "active": tk.StringVar(),
-            "line_style": tk.StringVar(),
-            "marker": tk.StringVar(),
-            "y_error": self.y_err,
-            "x_error": self.x_err,
-            "error_bar_color": tk.StringVar(),
-            "y_error_bar": tk.IntVar(),
-            "x_error_bar": tk.IntVar(),
-            "cap_size": tk.IntVar(),
-            "error_color": tk.StringVar(),
-            "use_data_for_fit_color": tk.BooleanVar(),
-        }
-        try:
-            d = MySettings.file_info[self.filename]
-            d["x_min"] = min(self.x)
-            d["x_max"] = max(self.x)
-            d["y_min"] = min(self.y)
-            d["y_max"] = max(self.y)
-        except TypeError or ValueError:
-            d = MySettings.file_info[self.filename]
-            d["x_min"] = 0
-            d["x_max"] = 1
-            d["y_min"] = 0
-            d["y_max"] = 1
+        if self.multi:
+            # print("br3")
+            data_range = len(self.data_val)
+            # print(self.data_val)
+        else:
+            data_range = 1
 
-        default_var = {
-            "error_color": "Black",
-            "color": "black",
-            "legend": "data",
-            "active": "yes",
-            "line_style": "solid",
-            "marker": "none",
-            "use_data_for_fit_color": False,
-        }
+        if type(self.x) is list:
+            temp = np.asarray(self.x)
+            self.x = temp
 
-        for var1 in default_var:
-            MySettings.file_info[self.filename][var1].set(default_var[var1])
+        for a in range(1, data_range+1, 1):
+            print(a)
+            #  convert list to ndarray
+            try:
+                if data_range > 1:
+                    # print("br4")
+                    hold = self.data_val[a]
+                    # print(hold)
+                    temp = np.asarray(hold)
+                    self.y = temp
+                else:
+                    temp = np.asarray(self.y)
+                    self.y = temp
+                    # print(self.y)
+            except ValueError:
+                return
+            # set variables in app data array MySettings.file_info
+            MySettings.file_info[self.filename + str(a)] = {
+                "color": tk.StringVar(),
+                "legend": tk.StringVar(),
+                "x_data": self.x,
+                "y_data": self.y,
+                "name": self.name + "-col " + str(a),
+                "active": tk.StringVar(),
+                "line_style": tk.StringVar(),
+                "marker": tk.StringVar(),
+                "y_error": self.y_err,
+                "x_error": self.x_err,
+                "error_bar_color": tk.StringVar(),
+                "y_error_bar": tk.IntVar(),
+                "x_error_bar": tk.IntVar(),
+                "cap_size": tk.IntVar(),
+                "error_color": tk.StringVar(),
+                "use_data_for_fit_color": tk.BooleanVar(),
+            }
+            try:
+                d = MySettings.file_info[self.filename + str(a)]
+                d["x_min"] = min(self.x)
+                d["x_max"] = max(self.x)
+                d["y_min"] = min(self.y)
+                d["y_max"] = max(self.y)
+            except TypeError or ValueError:
+                d = MySettings.file_info[self.filename + str(a)]
+                d["x_min"] = 0
+                d["x_max"] = 1
+                d["y_min"] = 0
+                d["y_max"] = 1
 
-        Data.x_auto()
+            default_var = {
+                "error_color": "Black",
+                "color": "black",
+                "legend": "data",
+                "active": "yes",
+                "line_style": "solid",
+                "marker": "none",
+                "use_data_for_fit_color": False,
+            }
+
+            for var1 in default_var:
+                MySettings.file_info[self.filename + str(a)][var1].set(default_var[var1])
+
+            Data.x_auto()
 
 
-class NewFile(MyFile):
+class NewFile:
 
     def __init__(self):
-        super().__init__(None)
         self.x = []
         self.y = []
+        self.multi = False
         self.y_err = []
         self.x_err = []
         self.x_str = tk.StringVar()
         self.y_str = tk.StringVar()
         self.name = tk.StringVar()
+        self.var = tk.StringVar()
         self.y_err_str = tk.StringVar()
         self.x_err_str = tk.StringVar()
         self.frame = tk.Toplevel()
+        self.filename = ""
         # self.frame.geometry("+%d+%d" % (ado_plot.x_margin_pop, ado_plot.y_margin_pop))
         self.frame.title("New DataSet")
         self.frame.resizable(0, 0)
@@ -228,8 +263,10 @@ class NewFile(MyFile):
                 ttk.Entry(self.frame.frame, textvariable=e["v"]).grid(
                     row=e["r"], column=2, stick="ew", padx=5, pady=2.5)
 
-        ttk.Button(self.frame.frame, text="Set", command=lambda: self.do_store()).grid(
+        ttk.Button(self.frame.frame, text="Set", command=self.do_store).grid(
             row=6, column=1, stick="ew", padx=5, pady=2.5)
+
+        self.frame.wait_window(self.frame)
 
     def do_store(self):
         # this function grabs the strings and converts them into lists for iteration and plotting
@@ -239,10 +276,17 @@ class NewFile(MyFile):
             # convert x/y string submitted data into x/y data lists
             d_list = [self.x, self.y]
             d_str_list = [self.x_str, self.y_str]
+            f = []
             for d_str, d_data in zip(d_list, d_str_list):
-                f = [float(ele) for ele in str(d_data.get()).split(",")]
-                for vl in f:
-                    d_str.append(vl)
+                if str(d_data.get()) != '':
+                    if '.' in str(d_data.get()):
+                        f = [float(ele) for ele in str(d_data.get()).split(",")]
+                    if '.' not in str(d_data.get()):
+                        f = [float(ele) for ele in str(d_data.get()).split(",")]
+                    for vl in f:
+                        d_str.append(vl)
+                else:
+                    return
             # then check if x and y are same length
             if len(self.x) != len(self.y):
                 tk_message_box.showerror("Data entry error", "X/Y values do not have the same amount of numbers,"
@@ -251,8 +295,11 @@ class NewFile(MyFile):
             erc_str = [self.x_err_str, self.y_err_str]
             erc_val = [self.x_err, self.y_err]
             for check, val, comp in zip(erc_str, erc_val, d_list):
-                try:
-                    f = [float(ele) for ele in str(check.get()).split(",")]
+                if str(check.get()) != '':
+                    if '.' in str(check.get()):
+                        f = [float(ele) for ele in str(check.get()).split(",")]
+                    if '.' not in str(check.get()):
+                        f = [int(ele) for ele in str(check.get()).split(",")]
                     for vl in f:
                         val.append(vl)
                     # check if there are any variables and if so compare to the length of x/y
@@ -268,11 +315,11 @@ class NewFile(MyFile):
                                                                                      "entry and "
                                                                                      "try "
                                                                                      "again.")
-                except ValueError:
-                    return
+                else:
+                    pass
             # after successfully entering the new data set, close the window and return to the overview
             # by processing this in the super class
             self.frame.destroy()
             self.filename = self.name.get()
-            self.file_id()
-            self.set_var()
+            self.name = self.name.get()
+            MyFile.set_var(self)
