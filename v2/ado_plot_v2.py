@@ -397,13 +397,15 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
         my_fits = MySettings.my_fits
 
         # run through all available fit options
-        for fits in my_fits:
+        for r, fits in enumerate(my_fits):
             ttk.Checkbutton(my_fit_window, text=my_fits[fits]["name"], onvalue=my_fits[fits]["var"], offvalue="",
-                            variable=MySettings.graph_settings["fit"]).grid(column=1, **my_fit_grid_opt_but)
+                            variable=MySettings.graph_settings["fit"]).grid(row=r, column=1, **my_fit_grid_opt_but)
+            ttk.Button(my_fit_window, text="info",
+                       command=lambda i=my_fits[fits]: self.my_fit_info(i)).grid(row=r, column=2, **my_fit_grid_opt_but)
 
         # set fitting algorithm
         my_fit_window2 = tk.LabelFrame(self.frame.window, text="Set Algorithm")
-        my_fit_window2.grid(row=1, column=2, stick="nsew", padx=5, pady=2.5, ipady=5)
+        my_fit_window2.grid(row=1, column=3, stick="nsew", padx=5, pady=2.5, ipady=5)
         ttk.Combobox(my_fit_window2, state="readonly", values=MySettings.fit_alg, justify="left",
                      textvariable=MySettings.graph_settings["fit_alg"]).grid(
             column=1, **my_fit_grid_opt_but)
@@ -427,6 +429,16 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
                      textvariable=MySettings.graph_settings["fit_color"]).grid(
             column=1, columnspan=2, **my_fit_grid_opt_but)
         ttk.Button(main, text="Set", command=lambda: main.destroy()).grid(column=1, **my_fit_grid_opt_but)
+
+    def my_fit_info(self, ind):
+        self.frame.window, self.frame.frame = self.call_ado_plot("Detailed Information")
+        data = MySettings.graph_settings
+        main = self.frame.window
+
+        my_fit_info_window = tk.LabelFrame(self.frame.window, text="Model description")
+        my_fit_info_window.grid(row=1, column=1, stick="nsew", padx=5, pady=2.5, ipady=5)
+
+        ttk.Label(my_fit_info_window, text=ind["desc"]).grid()
 
     def my_stats(self):
         # open window
@@ -820,7 +832,7 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
     @staticmethod
     def my_about():
         tk_message_box.showinfo("About",
-                                "This program was made by Dr A. Doekhie."
+                                "This program was made by Dr A. Doekhie. "
                                 "Use is purely intended for data visualisation and statistics. "
                                 "This program comes with absolutely NO WARRANTY.")
 

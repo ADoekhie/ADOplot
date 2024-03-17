@@ -19,25 +19,44 @@ class MySettings:
     my_fits = {
         "lin_reg": {"name": "Linear Regression",
                     "var": "lin_reg",
-                    "mode": "MyFunction(self.ax1, f_mode).pre_process"},
+                    "mode": "MyFunction(self.ax1, f_mode).pre_process",
+                    "desc": " A linear regression line has an equation of the form [y = ax + b],"
+                            "\n where [x] is the explanatory variable and [y] is the dependent variable."
+                            "\n The slope of the line is [a], and b is the intercept (the value of [y] when x = 0)"},
         "lin_fpl": {"name": "Four Parameter Logistic",
                     "var": "lin_fpl",
-                    "mode": "MyFunction(self.ax1, f_mode).pre_process"},
+                    "mode": "MyFunction(self.ax1, f_mode).pre_process",
+                    "desc": " A 4-Parameter Logistic curve (4PL) is a mathematical model which gives a shape similar"
+                            "\n to the S-shaped dose-response commonly seen in bioassay data (formally, a sigmoidal "
+                            "\n shape). At high and low doses, the response changes little with dose, giving flat"
+                            "\n regions, while at intermediate doses that change can be rapid resulting in a steeper"
+                            "\n section. If this curve is symmetric, then a 4PL is usually a good model choice."},
         "f_peaks": {"name": "Find Peaks",
                     "var": "f_peaks",
-                    "mode": "MyFunction(self.ax1, f_mode).f_peaks"},
+                    "mode": "MyFunction(self.ax1, f_mode).f_peaks",
+                    "desc": "This model is useful for FT-IR transmission data and will annotate the prominent peaks."},
         "uv_gibbs": {"name": "UV Thermal",
                      "var": "uv_gibbs",
-                     "mode": "MyFunction(self.ax1, f_mode).pre_process"},
+                     "mode": "MyFunction(self.ax1, f_mode).pre_process",
+                     "desc": "This model will fit a two state transition using UV-vis data measured over a temperature"
+                             "\n range. Fit is based on the Gibbs-Helmholtz equation. The equation is as follows:"
+                             "\n m = (tm + 273.15)"
+                             "\n t = (v + 273.15)"
+                             "\n k = (np.exp((h / 8.314472 * v) * ((t / m) - 1)))"
+                             "\n y = (k / (1 + k))"
+                             "\n ((u - lo) * y) + lo"},
         "cd two state": {"name": "CD two state",
                          "var": "cd two state",
-                         "mode": "MyFunction(self.ax1, f_mode).pre_process"},
+                         "mode": "MyFunction(self.ax1, f_mode).pre_process",
+                         "desc": "test"},
         "cd two state lin": {"name": "CD two state lin corr",
                              "var": "cd two state lin",
-                             "mode": "MyFunction(self.ax1, f_mode).pre_process"},
+                             "mode": "MyFunction(self.ax1, f_mode).pre_process",
+                             "desc": "test"},
         "custom eq": {"name": "Custom Equation",
                       "var": "custom eq",
-                      "mode": "MyFunction(self.ax1, f_mode).custom_plot"},
+                      "mode": "MyFunction(self.ax1, f_mode).custom_plot",
+                      "desc": "test"},
     }
 
     my_markers = {  # marker options list

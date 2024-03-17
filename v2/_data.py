@@ -46,8 +46,8 @@ class Data:
             m_list = list(MySettings.file_info.keys())
             data = MySettings.file_info[m_list[0]]
             x_max, x_min, y_max, y_min = data["x_max"], data["x_min"], data["y_max"], data["y_min"]
-            f1 = 1.1
-            f2 = 0.9
+            f1 = 1.5
+            f2 = 0.5
             minmax_list = {
                 1: {"name": x_max, "var": MySettings.graph_settings["x_max_var"], "factor1": f1, "factor2": f2},
                 2: {"name": y_max, "var": MySettings.graph_settings["y_max_var"], "factor1": f1, "factor2": f2},

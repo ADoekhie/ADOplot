@@ -69,33 +69,33 @@ class MyFile:
                     header = 0
                     # print("found letter!") # for debugging file headers
 
-            if f_first.count(",") > 1:
-                self.data = pd.read_csv(self.filename, sep=',', header=header)
-                self.spectra = self.data.values
-                self.x = self.spectra[:, 0]
-                self.y = []
-                col = 1
-                self.multi = True
-                print("br1")
-                for c in range(1, len(self.data.columns), 1):
-                    self.data_val[c] = self.spectra[:, col]
-                    col += 1
+            # if f_first.count(",") > 3:
+            #     self.data = pd.read_csv(self.filename, sep=',', header=header)
+            #     self.spectra = self.data.values
+            #     self.x = self.spectra[:, 0]
+            #     self.y = []
+            #     col = 1
+            #     self.multi = True
+            #     print("br1")
+            #     for c in range(1, len(self.data.columns), 1):
+            #         self.data_val[c] = self.spectra[:, col]
+            #         col += 1
 
-            if f_first.count(",") == 1:
-                self.data = pd.read_csv(self.filename, sep=',', header=header)
-                self.spectra = self.data.values
-                self.x = self.spectra[:, 0]
-                self.y = self.spectra[:, 1]
-                try:
-                    self.y_err = self.spectra[:, 2]
-                except IndexError:
-                    self.y_err = []
-                    return
-                try:
-                    self.x_err = self.spectra[:, 3]
-                except IndexError:
-                    self.x_err = []
-                    return
+            # if f_first.count(",") < 2:
+            self.data = pd.read_csv(self.filename, sep=',', header=header)
+            self.spectra = self.data.values
+            self.x = self.spectra[:, 0]
+            self.y = self.spectra[:, 1]
+            try:
+                self.y_err = self.spectra[:, 2]
+            except IndexError:
+                self.y_err = []
+                return
+            try:
+                self.x_err = self.spectra[:, 3]
+            except IndexError:
+                self.x_err = []
+                return
 
         # process space-spaced .dat file
         if self.filename.find(".dat") > 0:
@@ -169,13 +169,15 @@ class MyFile:
             except ValueError:
                 return
             # set variables in app data array MySettings.file_info
-            MySettings.file_info[self.filename + str(a)] = {
+            # MySettings.file_info[self.filename + str(a)] = {
+            MySettings.file_info[self.filename] = {
                 "color": tk.StringVar(),
                 "legend": tk.StringVar(),
                 "use_legend": tk.BooleanVar(),
                 "x_data": self.x,
                 "y_data": self.y,
-                "name": self.name + "-col " + str(a),
+                # "name": self.name + "-col " + str(a),
+                "name": self.name,
                 "active": tk.StringVar(),
                 "line_style": tk.StringVar(),
                 "marker": tk.StringVar(),
@@ -189,13 +191,15 @@ class MyFile:
                 "use_data_for_fit_color": tk.BooleanVar(),
             }
             try:
-                d = MySettings.file_info[self.filename + str(a)]
+                # d = MySettings.file_info[self.filename + str(a)]
+                d = MySettings.file_info[self.filename]
                 d["x_min"] = min(self.x)
                 d["x_max"] = max(self.x)
                 d["y_min"] = min(self.y)
                 d["y_max"] = max(self.y)
             except TypeError or ValueError:
-                d = MySettings.file_info[self.filename + str(a)]
+                # d = MySettings.file_info[self.filename + str(a)]
+                d = MySettings.file_info[self.filename]
                 d["x_min"] = 0
                 d["x_max"] = 1
                 d["y_min"] = 0
@@ -213,7 +217,7 @@ class MyFile:
             }
 
             for var1 in default_var:
-                MySettings.file_info[self.filename + str(a)][var1].set(default_var[var1])
+                MySettings.file_info[self.filename][var1].set(default_var[var1])
 
             Data.x_auto()
 
