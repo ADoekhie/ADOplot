@@ -48,15 +48,20 @@ class MySettings:
         "cd two state": {"name": "CD two state",
                          "var": "cd two state",
                          "mode": "MyFunction(self.ax1, f_mode).pre_process",
-                         "desc": "test"},
+                         "desc": "To determine the calorimetric parameters of circular dichroism data over temperature."
+                                 "Proteins with horizontal plateaus before and after transition are suitable for this."
+                         },
         "cd two state lin": {"name": "CD two state lin corr",
                              "var": "cd two state lin",
                              "mode": "MyFunction(self.ax1, f_mode).pre_process",
-                             "desc": "test"},
+                             "desc": "To determine the calorimetric parameters of circular dichroism data over"
+                                     " temperature. Proteins with sloped plateaus before and after transition are"
+                                     " suitable for this."},
         "custom eq": {"name": "Custom Equation",
                       "var": "custom eq",
                       "mode": "MyFunction(self.ax1, f_mode).custom_plot",
-                      "desc": "test"},
+                      "desc": "Input your own equation and add the respective parameters to use the curve "
+                              "fitting package."},
     }
 
     my_markers = {  # marker options list
@@ -150,6 +155,8 @@ class MySettings:
         "dpi": 96,
         "fit_alg": "trf",
         "stats_test": None,
+        "bar_width": 1,
+        "bar": False,
     }
 
     @staticmethod
@@ -182,7 +189,7 @@ class MySettings:
             "x_scale": tk.StringVar(),
             "y_scale": tk.StringVar(),
             "fit_color": tk.StringVar(),
-            "bar": tk.IntVar(),
+            "bar": tk.BooleanVar(),
             "plotted": [],
             "x_label_font": tk.IntVar(),
             "y_label_font": tk.IntVar(),
@@ -196,6 +203,7 @@ class MySettings:
             "fit_alg": tk.StringVar(),
             "legend_font": tk.IntVar(),
             "stats_test": tk.StringVar(),
+            "bar_width": tk.StringVar(),
         }
 
         MySettings.anno_opt = {

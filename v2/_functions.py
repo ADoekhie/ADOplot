@@ -14,10 +14,12 @@ class MyFunction:
         self.type = f_mode
 
     @staticmethod
+    # linear regression
     def my_lin_plot(a, x, b):
         return a * x + b
 
     @staticmethod
+    # two state sigmoidal transition using UV vis data
     def my_uv_gibbs_plot(v, u, lo, tm, h):
         m = (tm + 273.15)
         t = (v + 273.15)
@@ -26,7 +28,7 @@ class MyFunction:
         return ((u - lo) * y) + lo
 
     @staticmethod
-    # protein two state transition function
+    # protein two state transition function using circular dichroism data
     def my_cd_two_state(v, u, lo, tm, h):
         m = (tm + 273.15)
         t = (v + 273.15)
@@ -35,6 +37,8 @@ class MyFunction:
         return ((u - lo) * y) + lo
 
     @staticmethod
+    # protein two state transtion functiong using circular dichroism data
+    # accounting for linear slopes pre and post transition
     def my_cd_two_state_lin(v, u, lo, tm, h, u1, l1):
         m = tm + 273.15
         t = v + 273.15
@@ -43,6 +47,8 @@ class MyFunction:
         return y * ((u + (u1 * v)) - (lo + (l1 * v))) + (lo + (l1 * v))
 
     @staticmethod
+    # four parameter logistics cure
+    # standard dose response curve based on data from ELISA
     def my_fpl_plot(xe, a, b, cc, d):
         return d + ((a - d) / (1 + ((xe / cc) ** b)))
 
@@ -116,14 +122,16 @@ class MyFunction:
                 mfl2["p_opt"], mfl2["p_cov"] = curve_fit(func[self.type]["f"], data_x, data_y,
                                                          bounds=func[self.type]["b"],
                                                          method=self.my_alg.get())
-            except RuntimeError:
-                tk_message_box.showinfo("Fitting Failed",
-                                        "Optimal parameters not found:"
-                                        "The maximum number of function evaluations is exceeded.")
+            except RuntimeError or RuntimeWarning as e:
+                tk_message_box.showinfo("Fitting Failed", str(e) + "\nPlease adjust settings and retry.")
                 return
         else:
-            mfl2["p_opt"], mfl2["p_cov"] = curve_fit(func[self.type]["f"], data_x, data_y,
+            try:
+                mfl2["p_opt"], mfl2["p_cov"] = curve_fit(func[self.type]["f"], data_x, data_y,
                                                      method=self.my_alg.get())
+            except RuntimeError or RuntimeWarning as e:
+                tk_message_box.showinfo("Fitting Failed", str(e) + "\nPlease adjust settings and retry.")
+                return
 
         func_lab = {
             "lin_reg": {

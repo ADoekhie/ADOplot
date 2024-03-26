@@ -153,7 +153,7 @@ class MyFile:
             self.x = temp
 
         for a in range(1, data_range+1, 1):
-            print(a)
+            # a)
             #  convert list to ndarray
             try:
                 if data_range > 1:

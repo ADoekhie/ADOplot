@@ -12,13 +12,12 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
     def __init__(self):
         super().__init__()  # initialise all tkinter functions
 
-        # window frame settings
-        self.file_info = MySettings.file_info
-        MySettings.set_var()
+        self.file_info = MySettings.file_info   # window frame settings
+        MySettings.set_var()     # initialise program dynamic variables
         self.graph_set = MySettings.graph_settings
         self.graph_lab = MySettings.graph_labels
         self.ann = MySettings.annos
-        self.original_dpi = 143.858407079646
+        self.original_dpi = 143.858407079646    # dpi of the screen this program was made on
         self.dpi = self.winfo_fpixels('1i')
         self.scale = self.dpi / self.original_dpi
         self.w = 800 * self.scale
@@ -289,10 +288,16 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
                          justify="left", textvariable=gtv,
                          width=10).grid(column=col, **graph_type_grid_opt)
 
+        if MySettings.graph_settings["plot_mode"].get() == "Bar":
+            ttk.Label(self.frame.window, text="Bar Width").grid(row=2, column=1, **graph_type_grid_opt_but)
+            ttk.Entry(self.frame.window,
+                      textvariable=MySettings.graph_settings["bar_width"]).grid(
+                row=2, column=2, **graph_type_grid_opt_but)
+
         ttk.Button(self.frame.window, text="OK",
-                   command=lambda: self.frame.window.destroy()).grid(row=2, column=1, **graph_type_grid_opt_but)
+                   command=lambda: self.frame.window.destroy()).grid(row=3, column=1, **graph_type_grid_opt_but)
         ttk.Button(self.frame.window, text="Cancel",
-                   command=lambda: self.frame.window.destroy()).grid(row=2, column=2, **graph_type_grid_opt_but)
+                   command=lambda: self.frame.window.destroy()).grid(row=3, column=2, **graph_type_grid_opt_but)
 
     def my_font(self):
         # open new window
@@ -312,15 +317,13 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
             "legend Font Size": "legend_font",
         }
 
-        a = 1
-        for fo in my_font_dict:
+        for a, fo in enumerate(my_font_dict):
             ttk.Label(font_options, text=fo).grid(row=a, column=1, **opt_c)
             ttk.Entry(font_options, textvariable=MySettings.graph_settings[my_font_dict[fo]], width=3).grid(
                 row=a, column=2, **opt_c)
-            a += 1
 
         # close window
-        ttk.Button(main, text="OK", command=lambda: main.destroy()).grid(row=a, column=1, **opt_f)
+        ttk.Button(main, text="OK", command=lambda: main.destroy()).grid(column=1, **opt_f)
 
     def my_properties(self, my_file):
         # open window and set variables
@@ -353,7 +356,6 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
                     ttk.Checkbutton(ser, onvalue=1, offvalue=0, variable=fym[err_bar]).grid(row=1, column=1, **kw_c)
                     ttk.Label(ser, text="Cap Size").grid(row=1, column=2, **kw)
                     ttk.Entry(ser, textvariable=fym["cap_size"], width=2).grid(row=1, column=3, **kw_c)
-
             except ValueError:
                 pass
 
@@ -465,7 +467,7 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
         y = [1, 4, 1, 3, 2, 17, 15, 14, 15, 1, 15, 14]
 
         my_stat = Stats.t_test(y, 10)
-        print(my_stat)
+        # print(my_stat)
 
     def my_custom_eq(self):
         # open window
@@ -496,14 +498,12 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
             ttk.Label(my_leg, text="No data loaded").grid(**grid_opt_lab)
 
         # set new frame in window
-        a = 1
-        for item in MySettings.file_info:
+        for a, item in enumerate(MySettings.file_info):
             data = MySettings.file_info[item]
             ttk.Label(my_leg, text=data["name"]).grid(row=a, column=1, **grid_opt_but)
             ttk.Entry(my_leg, textvariable=data["legend"]).grid(row=a, column=2, **grid_opt_but)
             ttk.Checkbutton(my_leg, text="Display", onvalue=True, offvalue=False,
                             variable=data["use_legend"]).grid(row=a, column=3, **grid_opt_but)
-            a += 1
 
         # Another label frame to hold legend options
         my_leg_opt = tk.LabelFrame(self.frame.window, text="Legend Options")
@@ -578,12 +578,12 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
         ttk.Button(main, text="OK", command=lambda: main.destroy()).grid(row=5, column=1, **opt)
 
     def relist_anno(self, an, window):
-        self.annos.pop(an)
+        MySettings.annos.pop(an)
         window.destroy()
         self.my_annotate()
 
     def my_annotate(self):
-        # open window
+        # open windo
         self.frame.window, self.frame.frame = self.call_ado_plot("Annotations")
         anno_frame = tk.LabelFrame(self.frame.window, text="List of annotations")
         g_a = {
@@ -595,21 +595,19 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
         ttk.Label(anno_frame, text="Index").grid(row=1, column=1, **g_a)
         ttk.Label(anno_frame, text="Label").grid(row=1, column=2, **g_a)
 
-        b = 2
         try:
-            for a in MySettings.annos:
+            for b, a in enumerate(MySettings.annos):
                 ttk.Label(anno_frame, text=a).grid(row=b, column=1, **g_a)
-                ttk.Label(anno_frame, text=MySettings.annos[a]["title"].get()).grid(row=b, column=2, **g_a)
+                ttk.Label(anno_frame, text=MySettings.annos[a]["title"]).grid(row=b, column=2, **g_a)
                 ttk.Button(anno_frame, text='Delete', command=lambda: self.relist_anno(a, self.frame.window)).grid(
                     row=b, column=4, **g_a)
-                b += 1
         except IndexError or KeyError:
             return
 
         anno_frame2 = tk.LabelFrame(self.frame.window, text="Add annotation")
         anno_frame2.grid(row=1, column=2, **g_a)
         anno_frame3 = ttk.Button(self.frame.window, text="OK", command=lambda: self.frame.window.destroy())
-        anno_frame3.grid(row=b, column=1, **g_a)
+        anno_frame3.grid(column=1, **g_a)
 
         def adding():
             self.frame.window.destroy()
@@ -632,7 +630,8 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
             ind = len(MySettings.annos) + 1
             MySettings.annos[ind] = {}
             for opt2 in MySettings.anno_opt:
-                MySettings.annos[ind][opt2] = MySettings.anno_opt[opt2]
+                MySettings.annos[ind][opt2] = MySettings.anno_opt[opt2].get()
+
             self.frame.window.destroy()
             self.my_annotate()
 
@@ -741,9 +740,12 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
                                     MySettings.file_info[fl][k] = v  # accept the value as is
                         except AttributeError:  # unless there is an attribute error
                             MySettings.file_info[fl][k] = v  # accept the value as is
+                try:
+                    f_second_line = f.readline()
+                    y = json.loads(f_second_line)
+                except json.decoder.JSONDecodeError:
+                    return
 
-                f_second_line = f.readline()
-                y = json.loads(f_second_line)
                 for d, v in y.items():
                     try:
                         MySettings.graph_settings[d].set(v)

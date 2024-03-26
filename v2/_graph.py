@@ -59,12 +59,23 @@ class MyGraph:
                     if MySettings.graph_settings["y_scale"].get() != 'reverse':
                         self.ax1.set_yscale(MySettings.graph_settings["y_scale"].get())
                 if p_mode == "Bar":
-                    width = 0.35
-                    if MySettings.graph_settings["bar"] != 0:
-                        self.ax1.bar(x + width / 2, y, width=width, label=my_file)
-                    else:
-                        self.ax1.bar(x - width / 2, y, width=width, label=my_file)
-                        MySettings.graph_settings["bar"].set(1)
+                    width = float(MySettings.graph_settings["bar_width"].get())
+
+                    if not MySettings.graph_settings["bar"].get():
+                        print("passing here")
+                        MySettings.graph_settings["x_min_var"].set(0)
+                        MySettings.graph_settings["y_max_var"].set(max(y) * 1.1)
+                        MySettings.graph_settings["y_min_var"].set(min(y))
+                        MySettings.graph_settings["bar"].set(True)
+
+                        for i, a in enumerate(x):
+                            self.ax1.bar(i + 1, y[i], width=width, label=my_file)
+                            MySettings.graph_settings["x_max_var"].set(i + 1)
+                            # print(i,a,y[i])
+
+                    if MySettings.graph_settings["bar"].get():
+                        for i, a in enumerate(x):
+                            self.ax1.bar(i + 1, y[i], width=width, label=my_file)
 
                 error_bar_opt = {
                     "c": color,
@@ -87,17 +98,20 @@ class MyGraph:
                     self.ax1.errorbar(x, y, yerr=y_error, xerr=x_error, **error_bar_opt)
 
                 if MySettings.graph_settings["fit"].get():
-                    f_mode = MySettings.graph_settings["fit"].get()
-                    mode = "" + MySettings.my_fits[f_mode]["mode"] + "('" + my_file + "')"
-                    exec(mode)
+                    try:
+                        f_mode = MySettings.graph_settings["fit"].get()
+                        mode = "" + MySettings.my_fits[f_mode]["mode"] + "('" + my_file + "')"
+                        exec(mode)
+                    except KeyError:
+                        return
 
                 if len(MySettings.annos) > 0:
                     for ent in MySettings.annos:
-                        text = MySettings.annos[ent]["title"].get()
-                        xy = (float(MySettings.annos[ent]["x1"].get()), float(MySettings.annos[ent]["y1"].get()))
+                        text = MySettings.annos[ent]["title"]
+                        xy = (float(MySettings.annos[ent]["x1"]), float(MySettings.annos[ent]["y1"]))
                         try:
-                            xy_text = (float(MySettings.annos[ent]["x2"].get()),
-                                       float(MySettings.annos[ent]["y2"].get()))
+                            xy_text = (float(MySettings.annos[ent]["x2"]),
+                                       float(MySettings.annos[ent]["y2"]))
                         except ValueError:
                             xy_text = 0
                             pass
@@ -169,4 +183,3 @@ class MyGraph:
         self.ax1.minorticks_on()
         self.ax1.tick_params(axis="x", labelsize=MySettings.graph_settings["x_tick_size"].get())
         self.ax1.tick_params(axis="y", labelsize=MySettings.graph_settings["y_tick_size"].get())
-        MySettings.graph_settings["bar"].set(0)
