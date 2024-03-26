@@ -92,8 +92,8 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
             1: {"loc": self.tab_data_ls, "text": "Load File(s)", "cm": self.my_import, "y": 1, "cst": 5},
             2: {"loc": self.tab_data_ls, "text": "New Dataset", "cm": self.my_new_dataset, "y": 2, "cst": 2},
             3: {"loc": self.tab_graph_ls, "text": "Plot Graph", "cm": self.plot, "y": 1},
-            4: {"loc": self.tab_graph_ls, "text": "Set Type", "cm": self.graph_type, "y": 2},
-            5: {"loc": self.tab_graph_ls, "text": "Set X/Y", "cm": self.x_y, "y": 3},
+            4: {"loc": self.tab_graph_ls, "text": "Graph Options", "cm": self.graph_type, "y": 2},
+            5: {"loc": self.tab_graph_ls, "text": "Graph Limits", "cm": self.x_y, "y": 3},
             6: {"loc": self.tab_graph_rs1, "text": "Fit Options", "cm": self.my_fit, "y": 1},
             7: {"loc": self.tab_graph_rs1, "text": "Font Style", "cm": self.my_font, "y": 2},
             8: {"loc": self.tab_graph_rs1, "text": "Set Spines", "cm": self.my_spines, "y": 3},
@@ -193,7 +193,7 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
 
         # File Menu
         self.frame.file_menu = Menu(self.frame.menu_bar, tearoff=0)
-        self.frame.file_menu.add_command(label="Delete all data", command=self.del_all)
+        self.frame.file_menu.add_command(label="Clear Program", command=self.del_all)
         self.frame.file_menu.add_command(label="Exit", command=self.quit)
         self.frame.menu_bar.add_cascade(label="File", menu=self.frame.file_menu)
 
@@ -201,7 +201,7 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
         self.frame.data_menu = Menu(self.frame.menu_bar, tearoff=0)
         self.frame.data_menu.add_command(label="Save Project", command=self.save_config)
         self.frame.data_menu.add_command(label="Load Project", command=self.load_config)
-        self.frame.menu_bar.add_cascade(label="Save/Load", menu=self.frame.data_menu)
+        self.frame.menu_bar.add_cascade(label="Project", menu=self.frame.data_menu)
 
         # Help menu
         self.frame.help_menu = Menu(self.frame.menu_bar, tearoff=0)
@@ -270,6 +270,7 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
         # open window
         self.frame.window, self.frame.frame = self.call_ado_plot("Set graph type")
         graph_type_grid_opt = {"sticky": "ew", "row": 1, "padx": 5, "pady": 5}
+        graph_type_grid_opt_a = {"sticky": "ew", "padx": 5, "pady": 5}
         graph_type_grid_opt_but = {"sticky": "nsew", "padx": 5, "pady": 5}
         graph_type_list = ["Graph Type", "Scale Type X", "Scale Type Y"]
 
@@ -288,16 +289,26 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
                          justify="left", textvariable=gtv,
                          width=10).grid(column=col, **graph_type_grid_opt)
 
+        grid_opt = tk.LabelFrame(self.frame.window, text="Grid Options")
+        grid_opt.grid(row=2, column=1, columnspan=3, **graph_type_grid_opt_a)
+        for a, grd in enumerate(["Grid X-axis", "Grid Y-axis"]):
+            ttk.Checkbutton(grid_opt, text=grd,
+                            onvalue=True, offvalue=False,
+                            variable=MySettings.graph_settings[grd]).grid(
+                     row=2, column=a+1, **graph_type_grid_opt_but)
+
         if MySettings.graph_settings["plot_mode"].get() == "Bar":
-            ttk.Label(self.frame.window, text="Bar Width").grid(row=2, column=1, **graph_type_grid_opt_but)
-            ttk.Entry(self.frame.window,
+            bar_opt = tk.LabelFrame(self.frame.window, text="Bar Options")
+            bar_opt.grid(row=3, column=1, columnspan=3, **graph_type_grid_opt_a)
+            ttk.Label(bar_opt, text="Bar Width").grid(row=3, column=1, **graph_type_grid_opt_but)
+            ttk.Entry(bar_opt,
                       textvariable=MySettings.graph_settings["bar_width"]).grid(
-                row=2, column=2, **graph_type_grid_opt_but)
+                row=3, column=2, **graph_type_grid_opt_but)
 
         ttk.Button(self.frame.window, text="OK",
-                   command=lambda: self.frame.window.destroy()).grid(row=3, column=1, **graph_type_grid_opt_but)
+                   command=lambda: self.frame.window.destroy()).grid(row=4, column=1, **graph_type_grid_opt_but)
         ttk.Button(self.frame.window, text="Cancel",
-                   command=lambda: self.frame.window.destroy()).grid(row=3, column=2, **graph_type_grid_opt_but)
+                   command=lambda: self.frame.window.destroy()).grid(row=4, column=2, **graph_type_grid_opt_but)
 
     def my_font(self):
         # open new window
@@ -769,6 +780,7 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
         test = tk.StringVar()
         test2 = [1, 2, 3]
         test3 = tk.IntVar()
+        test4 = tk.BooleanVar()
 
         # convert dictionary stringvar data into JSON compatible format
         def dict_json(my_data):
@@ -780,7 +792,7 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
                         try:
                             if isinstance(v, type(n64)) or isinstance(v, type(n32)) or isinstance(v, type(nda)):
                                 data_store[info][d] = v.tolist()
-                            if isinstance(v, type(test)) or isinstance(v, type(test3)):
+                            if isinstance(v, type(test)) or isinstance(v, type(test3)) or isinstance(v, type(test4)):
                                 data_store[info][d] = v.get()
                             if isinstance(v, type(test2)):
                                 data_store[info][d] = v

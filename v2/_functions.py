@@ -95,7 +95,7 @@ class MyFunction:
         def plot():
             # store fit data
             mfl2["y_new"] = []
-            mfl2["x_new"] = np.arange(min(data_x), max(data_x), 1)
+            mfl2["x_new"] = np.arange(min(data_x), max(data_x), (max(data_x)/len(data_x))/100)
             for x in mfl2["x_new"]:
                 mfl2["y_new"].append(func[self.type]["f"](x, *mfl2["p_opt"]))
 
@@ -122,14 +122,14 @@ class MyFunction:
                 mfl2["p_opt"], mfl2["p_cov"] = curve_fit(func[self.type]["f"], data_x, data_y,
                                                          bounds=func[self.type]["b"],
                                                          method=self.my_alg.get())
-            except RuntimeError or RuntimeWarning as e:
+            except RuntimeError or RuntimeWarning or ValueError as e:
                 tk_message_box.showinfo("Fitting Failed", str(e) + "\nPlease adjust settings and retry.")
                 return
         else:
             try:
                 mfl2["p_opt"], mfl2["p_cov"] = curve_fit(func[self.type]["f"], data_x, data_y,
-                                                     method=self.my_alg.get())
-            except RuntimeError or RuntimeWarning as e:
+                                                         method=self.my_alg.get())
+            except RuntimeError or RuntimeWarning or ValueError as e:
                 tk_message_box.showinfo("Fitting Failed", str(e) + "\nPlease adjust settings and retry.")
                 return
 

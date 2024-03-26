@@ -157,6 +157,8 @@ class MySettings:
         "stats_test": None,
         "bar_width": 1,
         "bar": False,
+        "Grid X-axis": False,
+        "Grid Y-axis": False,
     }
 
     @staticmethod
@@ -204,6 +206,8 @@ class MySettings:
             "legend_font": tk.IntVar(),
             "stats_test": tk.StringVar(),
             "bar_width": tk.StringVar(),
+            "Grid X-axis": tk.BooleanVar(),
+            "Grid Y-axis": tk.BooleanVar(),
         }
 
         MySettings.anno_opt = {

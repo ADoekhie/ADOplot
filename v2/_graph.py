@@ -2,6 +2,8 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from _vars import MySettings
 import matplotlib.pyplot as plt
 from _data import Data
+
+#plt.rcParams["font.sans-serif"] = ["Nimbus Sans"]
 from _functions import MyFunction
 
 
@@ -62,7 +64,6 @@ class MyGraph:
                     width = float(MySettings.graph_settings["bar_width"].get())
 
                     if not MySettings.graph_settings["bar"].get():
-                        print("passing here")
                         MySettings.graph_settings["x_min_var"].set(0)
                         MySettings.graph_settings["y_max_var"].set(max(y) * 1.1)
                         MySettings.graph_settings["y_min_var"].set(min(y))
@@ -163,7 +164,7 @@ class MyGraph:
         if MySettings.graph_settings["x_scale"].get() == 'reverse':
             self.ax1.set_xlim(x_lim_max, x_lim_min)
         elif MySettings.graph_settings["x_scale"].get() == "log":
-            self.ax1.set_xlim(abs(x_lim_min), abs(x_lim_max))
+            self.ax1.set_xlim(abs(x_lim_min)+0.001, abs(x_lim_max))
         else:
             self.ax1.set_xlim(x_lim_min, x_lim_max)
 
@@ -174,6 +175,14 @@ class MyGraph:
             l_pos = 'best'
         else:
             l_pos = MySettings.graph_settings["legend_pos"].get()
+
+        if MySettings.graph_settings["Grid X-axis"].get() and MySettings.graph_settings["Grid Y-axis"].get():
+            self.ax1.grid()
+        elif MySettings.graph_settings["Grid X-axis"].get():
+            self.ax1.grid(axis='x')
+        elif MySettings.graph_settings["Grid Y-axis"].get():
+            self.ax1.grid(axis='y')
+
         if MySettings.graph_settings["show_legend"].get():
             self.ax1.legend(MySettings.graph_labels["labels"],
                             frameon=MySettings.graph_settings["legend_box"].get(),
@@ -183,3 +192,4 @@ class MyGraph:
         self.ax1.minorticks_on()
         self.ax1.tick_params(axis="x", labelsize=MySettings.graph_settings["x_tick_size"].get())
         self.ax1.tick_params(axis="y", labelsize=MySettings.graph_settings["y_tick_size"].get())
+        plt.rcParams["font.family"] = "sans-serif"
