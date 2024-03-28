@@ -2,37 +2,33 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from _vars import MySettings
 import matplotlib.pyplot as plt
 from _data import Data
-
-#plt.rcParams["font.sans-serif"] = ["Nimbus Sans"]
 from _functions import MyFunction
 
 
 class MyGraph:
 
     def __init__(self, window):
-        self.frame = window
-        # create canvas
+        self.frame = window  # create canvas
         if MySettings.graph_settings["interactive"] == 1:  # if MySettings.graph_settings["interactive"] == 1:
-            # print("code reached")
             plt.ion()
 
         self.figure1 = plt.Figure(figsize=(MySettings.graph_settings["figure_width"].get(),
                                            MySettings.graph_settings["figure_height"].get()),
-                                  dpi=96, constrained_layout=False,
-                                  frameon=True, tight_layout={"rect": (0, 0, .95, .95)})
+                                  dpi=96, frameon=True, tight_layout={"rect": (0, 0, .95, .95)})
         self.ax1 = self.figure1.add_subplot(1, 1, 1, clip_on="off")
         self.bar1 = FigureCanvasTkAgg(self.figure1, self.frame.frame)
         self.bar1.get_tk_widget().grid()
         p_mode2 = MySettings.graph_settings["plot_mode"]  # what type of plot is it
+
+        # print(MySettings.file_info)
 
         def in_plot(my_file):
             p_mode = MySettings.graph_settings["plot_mode"].get()  # what type of plot is it
 
             # gather all variables
             data = MySettings.file_info[my_file]
-            # print(data)
 
-            if data["active"].get() == 'yes':
+            if data["active"].get():
                 if data["use_legend"].get():
                     MySettings.graph_labels["labels"].append(data["legend"].get())
                 else:
@@ -177,11 +173,11 @@ class MyGraph:
             l_pos = MySettings.graph_settings["legend_pos"].get()
 
         if MySettings.graph_settings["Grid X-axis"].get() and MySettings.graph_settings["Grid Y-axis"].get():
-            self.ax1.grid()
+            self.ax1.grid(which="both", color='0.85')
         elif MySettings.graph_settings["Grid X-axis"].get():
-            self.ax1.grid(axis='x')
+            self.ax1.grid(which="both", axis='x', color='0.85')
         elif MySettings.graph_settings["Grid Y-axis"].get():
-            self.ax1.grid(axis='y')
+            self.ax1.grid(which="both", axis='y', color='0.85')
 
         if MySettings.graph_settings["show_legend"].get():
             self.ax1.legend(MySettings.graph_labels["labels"],

@@ -162,7 +162,7 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
                 cms = [self.my_properties, self.show_data, self.relist_my_dataset]
                 grid_opt = {"sticky": "w", "padx": 2.5, "pady": 5}
                 grid_opt_b = {"sticky": "w", "padx": 2.5, "pady": 5}
-                ttk.Checkbutton(plc, offvalue="no", onvalue="yes", variable=MySettings.file_info[d]["active"],
+                ttk.Checkbutton(plc, offvalue=False, onvalue=True, variable=MySettings.file_info[d]["active"],
                                 state=NORMAL).grid(row=b, column=0, **grid_opt)
                 ttk.Label(plc, text=MySettings.file_info[my_file]["name"]).grid(row=b, column=1, **grid_opt)
                 ttk.Button(plc, text="Set", command=lambda: cms[0](d)).grid(row=b, column=2, **grid_opt_b)
@@ -173,6 +173,7 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
             for my_file1 in MySettings.file_info:
                 place_buttons(my_file1, ab)
                 ab += 1
+
 
     def relist_my_dataset(self, file):  # remove a file from the main dictionary and loop again to refersh file list
         MySettings.file_info.pop(file)
@@ -740,16 +741,18 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
                     MyFile(fl).run_cfg()  # create an instance with tk.StringVars so we can edit the loaded config
                     for k, v in y[fl].items():  # run through each subsequent key and value
                         try:
-                            if k in MySettings.file_info[fl]:  # if the key already exists then set the vakue
-                                MySettings.file_info[fl][k].set(v)
-                            else:  # if it doesnt exist then try to create the key and set the type for the key before
-                                # adding in the actual value
+                            if fl in MySettings.file_info:  # if the key already exists then set the vakue
                                 try:
-                                    MySettings.file_info[fl][k] = type(v)  # set the type
                                     MySettings.file_info[fl][k].set(v)  # set the value(s)
-                                except AttributeError:  # unless there is an attribute error
+                                except AttributeError as e:  # unless there is an attribute error
                                     MySettings.file_info[fl][k] = v  # accept the value as is
-                        except AttributeError:  # unless there is an attribute error
+                            else:  # if it doesnt exist then try to create the key and set the type for the key before
+                                MySettings.file_info[fl] = {}  # adding in the actual value
+                                try:
+                                    MySettings.file_info[fl][k].set(v)  # set the value(s)
+                                except AttributeError as e:  # unless there is an attribute error
+                                    MySettings.file_info[fl][k] = v  # accept the value as is
+                        except AttributeError or KeyError:  # unless there is an attribute error
                             MySettings.file_info[fl][k] = v  # accept the value as is
                 try:
                     f_second_line = f.readline()
@@ -762,11 +765,18 @@ class MyFrame(tk.Tk):  # The window frame this program runs in
                         MySettings.graph_settings[d].set(v)
                     except AttributeError:
                         MySettings.graph_settings[d] = v
+
+                try:
+                    f_third_line = f.readline()
+                    y = json.loads(f_third_line)
+                    MySettings.graph_labels = y
+                except json.decoder.JSONDecodeError:
+                    return
+
                 f.close()  # close the config file
                 self.list_my_dataset()
             else:
                 tk_message_box.showerror("File error", "Please load a .cfg config file format.")
-            # print(MySettings.file_info)
         except IndexError:
             return
 

@@ -58,7 +58,7 @@ class MyFile:
 
     def file_type(self):
         # process CSV file
-        if self.filename.count(".csv") > 0:
+        if self.filename.count(".csv") == 1:
             f = open(self.filename, "r")
             f_first = f.readline()
             alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p',
@@ -67,35 +67,31 @@ class MyFile:
             for letter in alphabet:
                 if f_first.count(letter) != 0:
                     header = 0
-                    # print("found letter!") # for debugging file headers
 
-            # if f_first.count(",") > 3:
-            #     self.data = pd.read_csv(self.filename, sep=',', header=header)
-            #     self.spectra = self.data.values
-            #     self.x = self.spectra[:, 0]
-            #     self.y = []
-            #     col = 1
-            #     self.multi = True
-            #     print("br1")
-            #     for c in range(1, len(self.data.columns), 1):
-            #         self.data_val[c] = self.spectra[:, col]
-            #         col += 1
+            if f_first.count(",") >= 3:
+                self.data = pd.read_csv(self.filename, sep=',', header=header)
+                self.spectra = self.data.values
+                self.x = self.spectra[:, 0]
+                self.y = []
+                self.multi = True
+                for col, c in enumerate(self.data.columns):
+                    self.data_val[col] = self.spectra[:, col]
 
-            # if f_first.count(",") < 2:
-            self.data = pd.read_csv(self.filename, sep=',', header=header)
-            self.spectra = self.data.values
-            self.x = self.spectra[:, 0]
-            self.y = self.spectra[:, 1]
-            try:
-                self.y_err = self.spectra[:, 2]
-            except IndexError:
-                self.y_err = []
-                return
-            try:
-                self.x_err = self.spectra[:, 3]
-            except IndexError:
-                self.x_err = []
-                return
+            if f_first.count(",") <= 2:
+                self.data = pd.read_csv(self.filename, sep=',', header=header)
+                self.spectra = self.data.values
+                self.x = self.spectra[:, 0]
+                self.y = self.spectra[:, 1]
+                try:
+                    self.y_err = self.spectra[:, 2]
+                except IndexError:
+                    self.y_err = []
+                    return
+                try:
+                    self.x_err = self.spectra[:, 3]
+                except IndexError:
+                    self.x_err = []
+                    return
 
         # process space-spaced .dat file
         if self.filename.find(".dat") > 0:
@@ -141,83 +137,100 @@ class MyFile:
 
     @staticmethod
     def set_var(self):
+        container = None
         if self.multi:
-            # print("br3")
             data_range = len(self.data_val)
-            # print(self.data_val)
         else:
             data_range = 1
 
-        if type(self.x) is list:
+        if type(self.x) == np.ndarray:
             temp = np.asarray(self.x)
             self.x = temp
+        else:
+            self.x = []
 
-        for a in range(1, data_range+1, 1):
-            # a)
+        for a in range(0, data_range, 1):
             #  convert list to ndarray
             try:
                 if data_range > 1:
-                    # print("br4")
                     hold = self.data_val[a]
-                    # print(hold)
                     temp = np.asarray(hold)
                     self.y = temp
                 else:
                     temp = np.asarray(self.y)
                     self.y = temp
-                    # print(self.y)
-            except ValueError:
-                return
+            except ValueError as e:
+                self.y = []
+                pass
+
             # set variables in app data array MySettings.file_info
-            # MySettings.file_info[self.filename + str(a)] = {
-            MySettings.file_info[self.filename] = {
+            if self.multi:
+                MySettings.file_info[self.filename + str(a)] = {
+                    "name": self.name + "-col " + str(a),
+                }
+                container = MySettings.file_info[self.filename + str(a)]
+            else:
+                MySettings.file_info[self.filename] = {
+                    "name": self.name,
+                }
+                container = MySettings.file_info[self.filename]
+
+            container.update({
+                "x_data": self.x,
+                "y_data": self.y,
+                "y_error": self.y_err,
+                "x_error": self.x_err,
+                "active": tk.BooleanVar(),
+                "line_style": tk.StringVar(),
+                "marker": tk.StringVar(),
                 "color": tk.StringVar(),
                 "legend": tk.StringVar(),
                 "use_legend": tk.BooleanVar(),
-                "x_data": self.x,
-                "y_data": self.y,
-                # "name": self.name + "-col " + str(a),
-                "name": self.name,
-                "active": tk.StringVar(),
-                "line_style": tk.StringVar(),
-                "marker": tk.StringVar(),
-                "y_error": self.y_err,
-                "x_error": self.x_err,
                 "error_bar_color": tk.StringVar(),
                 "y_error_bar": tk.IntVar(),
                 "x_error_bar": tk.IntVar(),
                 "cap_size": tk.IntVar(),
                 "error_color": tk.StringVar(),
                 "use_data_for_fit_color": tk.BooleanVar(),
-            }
-            try:
-                # d = MySettings.file_info[self.filename + str(a)]
+            })
+
+            if self.multi:
+                d = MySettings.file_info[self.filename + str(a)]
+            else:
                 d = MySettings.file_info[self.filename]
+
+            try:
                 d["x_min"] = min(self.x)
                 d["x_max"] = max(self.x)
                 d["y_min"] = min(self.y)
                 d["y_max"] = max(self.y)
-            except TypeError or ValueError:
-                # d = MySettings.file_info[self.filename + str(a)]
-                d = MySettings.file_info[self.filename]
+            except ValueError:
                 d["x_min"] = 0
                 d["x_max"] = 1
                 d["y_min"] = 0
                 d["y_max"] = 1
+                pass
 
             default_var = {
-                "error_color": "Black",
+                "active": False,
+                "line_style": "solid",
+                "marker": "square",
                 "color": "black",
                 "legend": "data",
-                "active": "yes",
-                "line_style": "solid",
-                "marker": "none",
-                "use_data_for_fit_color": False,
                 "use_legend": True,
+                "error_bar_color": "black",
+                "y_error_bar": 0,
+                "x_error_bar": 0,
+                "cap_size": 0,
+                "error_color": "black",
+                "use_data_for_fit_color": False,
             }
 
             for var1 in default_var:
-                MySettings.file_info[self.filename][var1].set(default_var[var1])
+                if self.multi:
+                    MySettings.file_info[self.filename + str(a)][var1].set(default_var[var1])
+                else:
+                    MySettings.file_info[self.filename][var1].set(default_var[var1])
 
             Data.x_auto()
 
